@@ -29,7 +29,10 @@ import {
   MealPlan,
   InventoryItem,
   HouseStatus,
-  WeeklySummary
+  WeeklySummary,
+  StoreType,
+  FixedFunction,
+  MonthlyAccount
 } from "./types";
 
 // Helper to parse quick-add items for the shopping list (Brazilian Portuguese style)
@@ -143,6 +146,9 @@ export default function App() {
     recipes: Recipe[];
     mealPlan: MealPlan[];
     inventory: InventoryItem[];
+    fixedFunctions?: any[];
+    activityReactions?: any[];
+    monthlyAccounts?: any[];
   } | null>(null);
 
   // UI Navigation Tabs
@@ -406,21 +412,24 @@ export default function App() {
 
   const { 
     users = {}, 
-    couple = {} as any, 
-    tasks = [], 
-    events = [], 
-    shopping = [], 
-    expenses = [], 
-    memories = [], 
-    moods = [], 
-    wishlist = [], 
-    recipes = [], 
-    mealPlan = [], 
-    inventory = [], 
-    rewards = [], 
+    couple = {} as any,
+    tasks = [],
+    events = [],
+    shopping = [],
+    expenses = [],
+    memories = [],
+    moods = [],
+    wishlist = [],
+    recipes = [],
+    mealPlan = [],
+    inventory = [],
+    rewards = [],
     quests = [],
     quickNotes = [],
-    pets = []
+    pets = [],
+    fixedFunctions = [],
+    activityReactions = [],
+    monthlyAccounts = []
   } = state || {};
 
   // Determine partner object dynamically based on database keys

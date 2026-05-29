@@ -49,6 +49,8 @@ export enum ExpenseCategory {
   OUTROS = "Outros"
 }
 
+export type StoreType = "Supermercado" | "Farmácia" | "Pet Shop" | "Feira" | "Açougue" | "Padaria" | "Outros";
+
 export enum MoodType {
   CANSADO = "Cansado",
   BEM = "Bem",
@@ -101,6 +103,10 @@ export interface Couple {
   unlocked_achievements: string[]; // e.g. "7-days-no-dishes"
   shoppingBudgets?: Record<string, number>;
   shoppingFinalizations?: ShoppingFinalization[];
+  expenseBudgets?: Record<ExpenseCategory, number>; // monthly budget limit per category
+  weeklyTasksBalance?: { leandro: number; kaisa: number }; // tasks completed this week
+  coinBalance?: number; // separate from XP for reward store
+  xpBalance?: number; // permanent XP for ranking
 }
 
 export interface TaskComment {
@@ -117,6 +123,7 @@ export interface Task {
   responsible_id: string; // "Leandro" | "Kaisa" | "Ambos"
   due_date?: string;
   recurrence: "Nenhuma" | "Diária" | "Semanal" | "Quinzenal" | "Mensal";
+  rotation_enabled?: boolean; // if true, alternates on completion
   category: TaskCategory;
   priority: TaskPriority;
   time_estimate?: number; // minutes
@@ -126,6 +133,8 @@ export interface Task {
   completed_at?: string;
   archived: boolean;
   comments: TaskComment[];
+  transferred_from?: string; // user who originally owned the task
+  transfer_note?: string; // note when transferring
 }
 
 export interface Event {
@@ -157,6 +166,29 @@ export interface ShoppingItem {
   monthId?: string; // e.g. "2026-05" (Maio/2026)
   listStatus?: "active" | "finalized";
   paymentMethod?: string; // VR, Débito, Crédito, PIX, Dinheiro
+  store?: StoreType; // where to buy
+}
+
+export type FixedFunctionFrequency = "Diária" | "Semanal" | "Quinzenal" | "Mensal";
+
+export interface FixedFunction {
+  id: string;
+  title: string;
+  responsible_id: string; // permanent owner
+  frequency: FixedFunctionFrequency;
+  category: TaskCategory;
+  rotation_enabled: boolean; // if true, alternates between partners
+  current_rotation_owner: string; // who does it this cycle
+  completion_history: { date: string; completed_by: string }[];
+  active: boolean;
+}
+
+export interface ActivityReaction {
+  id: string;
+  activity_id: string;
+  user_id: string;
+  emoji: "❤️" | "🚀" | "🏆";
+  timestamp: string;
 }
 
 export interface Expense {
@@ -328,4 +360,17 @@ export interface Pet {
   documents: PetDocument[];
   food_daily_qty?: number; // daily weight in g
   food_inventory_item_id?: string; // connects to inventory item
+}
+
+export interface MonthlyAccount {
+  id: string;
+  name: string;
+  value: number;
+  due_day: number; // 1-31
+  paid_by_id: string;
+  category: string;
+  paid_this_month: boolean;
+  paid_month?: string;
+  payment_history: { month: string; paid: boolean }[];
+  coupleId?: string;
 }

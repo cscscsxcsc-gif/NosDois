@@ -23,7 +23,10 @@ import {
   Reward,
   Quest,
   QuickNote,
-  Pet
+  Pet,
+  FixedFunction,
+  ActivityReaction,
+  MonthlyAccount
 } from "../src/types";;
 
 // DB Path
@@ -49,6 +52,9 @@ interface DatabaseSchema {
   quests: Quest[];
   quickNotes: QuickNote[];
   pets?: Pet[];
+  fixedFunctions?: FixedFunction[];
+  activityReactions?: ActivityReaction[];
+  monthlyAccounts?: MonthlyAccount[];
 }
 
 const DEFAULT_USERS: { [key: string]: User } = {
@@ -359,6 +365,15 @@ export class DBStore {
         if (!this.data.pets) {
           this.data.pets = [];
         }
+        if (!this.data.fixedFunctions) {
+          this.data.fixedFunctions = [];
+        }
+        if (!this.data.activityReactions) {
+          this.data.activityReactions = [];
+        }
+        if (!this.data.monthlyAccounts) {
+          this.data.monthlyAccounts = [];
+        }
       } catch (err) {
         console.error("Error reading database file, resetting to seeds", err);
         this.resetToDefaults();
@@ -403,7 +418,10 @@ export class DBStore {
       rewards: [...DEFAULT_REWARDS],
       quests: [...DEFAULT_QUESTS],
       quickNotes: [],
-      pets: []
+      pets: [],
+      fixedFunctions: [],
+      activityReactions: [],
+      monthlyAccounts: []
     };
     this.save();
   }
