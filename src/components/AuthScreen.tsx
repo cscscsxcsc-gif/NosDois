@@ -419,11 +419,25 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 Seus dados ficam seguros e sincronizados só entre vocês dois. 🔒
               </p>
 
+              {/* Demo Login Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("nosdois_userId", "Leandro");
+                  localStorage.setItem("nosdois_coupleId", "couple_1");
+                  localStorage.setItem("nosdois_email", "leandro@nosdois.com");
+                  onAuthSuccess("Leandro", "couple_1", "leandro@nosdois.com");
+                }}
+                className="mt-4 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-xl text-[11px] text-emerald-300 font-bold transition cursor-pointer select-none hover:scale-105 active:scale-95 duration-200"
+              >
+                🚀 Entrar como demonstração
+              </button>
+
               {/* Returning User Option Link */}
               <button
                 type="button"
                 onClick={() => { clearStates(); setView('login'); }}
-                className="mt-4 text-[11px] text-purple-200/50 hover:text-white transition font-bold underline decoration-dotted decoration-purple-400 cursor-pointer select-none hover:scale-105 active:scale-95 duration-200"
+                className="mt-3 text-[11px] text-purple-200/50 hover:text-white transition font-bold underline decoration-dotted decoration-purple-400 cursor-pointer select-none hover:scale-105 active:scale-95 duration-200"
               >
                 Já possui uma conta? Entrar
               </button>
@@ -943,3 +957,6 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     </div>
   );
 }
+
+
+export default AuthScreen
