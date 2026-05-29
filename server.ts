@@ -1,395 +1,38 @@
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
+import express from "express";
+import path from "path";
+import { createServer as createViteServer } from "vite";
+import { db } from "./server/db";
+import { GoogleGenAI } from "@google/genai";
+import {
+  Task,
+  TaskCategory,
+  TaskPriority,
+  EventType,
+  ShoppingCategory,
+  ExpenseCategory,
+  MoodType,
+  WishlistCategory,
+  ShoppingItem,
+  Expense,
+  Memory,
+  WishlistItem,
+  Recipe,
+  Event,
+  Reward,
+  Quest,
+  Pet,
+  StoreType,
+  FixedFunction,
+  ActivityReaction
+} from "./src/types";
 
-// server.ts
-var import_express = __toESM(require("express"), 1);
-var import_path2 = __toESM(require("path"), 1);
-var import_vite = require("vite");
+const app = express();
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-// server/db.ts
-var import_fs = __toESM(require("fs"), 1);
-var import_path = __toESM(require("path"), 1);
-var DB_FILE = import_path.default.join(process.cwd(), "nosdois_db.json");
-var DEFAULT_USERS = {
-  Leandro: {
-    id: "Leandro",
-    name: "Leandro",
-    partner_nickname: "Moz\xE3o",
-    color: "#3B82F6",
-    // Blue
-    timezone: "America/Sao_Paulo",
-    avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
-    points_weekly: 40
-  },
-  Kaisa: {
-    id: "Kaisa",
-    name: "Kaisa",
-    partner_nickname: "Meu Amor",
-    color: "#EC4899",
-    // Pink
-    timezone: "America/Sao_Paulo",
-    avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
-    points_weekly: 55
-  }
-};
-var DEFAULT_COUPLE = {
-  id: "couple_1",
-  invite_code: "AMOR42",
-  connected: true,
-  home_level: 4,
-  total_points: 380,
-  unlocked_achievements: ["7-days-no-dishes", "first-trip-album"]
-};
-var DEFAULT_TASKS = [
-  {
-    id: "task_1",
-    title: "Lavar a lou\xE7a do jantar",
-    description: "Lavar pratos, panelas e limpar a pia para manter a cozinha cheirosa.",
-    responsible_id: "Leandro",
-    category: "Cozinha" /* COZINHA */,
-    priority: "Normal" /* NORMAL */,
-    due_date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-    recurrence: "Di\xE1ria",
-    time_estimate: 20,
-    points: 10,
-    completed: false,
-    archived: false,
-    comments: [
-      { id: "c1", author_id: "Kaisa", text: "Amor, n\xE3o se esquece de colocar o escorredor no lugar \u{1F49C}", timestamp: new Date(Date.now() - 36e5).toISOString() },
-      { id: "c2", author_id: "Leandro", text: "Pode deixar, vou fazer isso j\xE1 j\xE1!", timestamp: new Date(Date.now() - 18e5).toISOString() }
-    ]
-  },
-  {
-    id: "task_2",
-    title: "Dar banho no Luke (Pet)",
-    description: "Dar banho, secar bem com toalha e aplicar o spray de cheiro agrad\xE1vel.",
-    responsible_id: "Kaisa",
-    category: "Pet" /* PET */,
-    priority: "Urgente" /* URGENTE */,
-    due_date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-    recurrence: "Semanal",
-    time_estimate: 45,
-    points: 25,
-    completed: true,
-    completed_at: new Date(Date.now() - 864e5).toISOString(),
-    archived: false,
-    comments: [
-      { id: "c3", author_id: "Kaisa", text: "Ficou muito cheiroso!", timestamp: new Date(Date.now() - 8e7).toISOString() }
-    ]
-  },
-  {
-    id: "task_3",
-    title: "Passar pano na sala e quarto",
-    description: "Varrer primeiro, depois passar pano \xFAmido com desinfetante lavanda.",
-    responsible_id: "Ambos",
-    category: "Sala" /* SALA */,
-    priority: "Normal" /* NORMAL */,
-    due_date: new Date(Date.now() + 864e5).toISOString().split("T")[0],
-    recurrence: "Semanal",
-    time_estimate: 30,
-    points: 15,
-    completed: false,
-    archived: false,
-    comments: []
-  },
-  {
-    id: "task_4",
-    title: "Trocar l\xE2mpada do banheiro social",
-    description: "Comprar l\xE2mpada LED branca de rosca comum e instalar.",
-    responsible_id: "Leandro",
-    category: "Banheiro" /* BANHEIRO */,
-    priority: "Baixa" /* BAIXA */,
-    due_date: new Date(Date.now() + 2592e5).toISOString().split("T")[0],
-    recurrence: "Nenhuma",
-    time_estimate: 10,
-    points: 10,
-    completed: false,
-    archived: false,
-    comments: []
-  }
-];
-var DEFAULT_EVENTS = [
-  {
-    id: "event_1",
-    title: "Anivers\xE1rio de Casamento (Celebra\xE7\xE3o)",
-    description: "Nosso dia especial! Jantar rom\xE2ntico reservado no restaurante Vista Rooftop.",
-    type: "Data especial" /* DATA_ESPECIAL */,
-    start_time: `${(/* @__PURE__ */ new Date()).getFullYear()}-06-12T20:00:00`,
-    end_time: `${(/* @__PURE__ */ new Date()).getFullYear()}-06-12T23:30:00`,
-    location: "Restaurante Vista Rooftop",
-    booking_link: "https://example.com/reserva-vista",
-    responsible_id: "Ambos",
-    comments: []
-  },
-  {
-    id: "event_2",
-    title: "Viagem de Fim de Semana para Campos do Jord\xE3o",
-    description: "Mini-f\xE9rias no frio! Cobertores, fondue e caminhadas ao ar livre.",
-    type: "Viagem" /* VIAGEM */,
-    start_time: `${(/* @__PURE__ */ new Date()).getFullYear()}-07-15T08:00:00`,
-    end_time: `${(/* @__PURE__ */ new Date()).getFullYear()}-07-17T18:00:00`,
-    location: "Chale Bosque Feliz, Campos do Jord\xE3o",
-    travel_checklist: [
-      { item: "Casacos pesados", checked: true },
-      { item: "Estojo de rem\xE9dios", checked: false },
-      { item: "Garrafa t\xE9rmica de caf\xE9", checked: true },
-      { item: "Carregadores e c\xE2mera", checked: false }
-    ],
-    responsible_id: "Ambos",
-    comments: [
-      { id: "ec1", author_id: "Leandro", text: "J\xE1 abasteci o carro!", timestamp: (/* @__PURE__ */ new Date()).toISOString() }
-    ]
-  },
-  {
-    id: "event_3",
-    title: "Consulta M\xE9dica da Kaisa",
-    description: "Exames de rotina peri\xF3dicos.",
-    type: "Evento individual" /* INDIVIDUAL */,
-    start_time: `${(/* @__PURE__ */ new Date()).getFullYear()}-06-05T14:30:00`,
-    responsible_id: "Kaisa",
-    comments: []
-  }
-];
-var DEFAULT_SHOPPING = [
-  { id: "shop_1", name: "Tomate italiano", category: "Hortifr\xFAti" /* HORTIFRUTI */, quantity: 1, unit: "kg", price: 8.5, is_bought: false, added_by: "Kaisa" },
-  { id: "shop_2", name: "Leite Integral Sem Lactose", category: "Latic\xEDnios" /* LATICINIOS */, quantity: 4, unit: "caixas", price: 5.2, is_bought: false, added_by: "Leandro" },
-  { id: "shop_3", name: "Alcatra bovina", category: "Carnes" /* CARNES */, quantity: 1.2, unit: "kg", price: 42, is_bought: true, bought_at: new Date(Date.now() - 4e5).toISOString(), added_by: "Leandro" },
-  { id: "shop_4", name: "Detergente de Ma\xE7\xE3", category: "Limpeza" /* LIMPEZA */, quantity: 2, unit: "unidades", price: 2.8, is_bought: false, added_by: "Kaisa" },
-  { id: "shop_5", name: "Papel higi\xEAnico folha dupla", category: "Higiene" /* HIGIENE */, quantity: 1, unit: "pacote (12 un)", price: 18.9, is_bought: false, added_by: "Kaisa" }
-];
-var DEFAULT_EXPENSES = [
-  { id: "exp_1", value: 350, currency: "R$", description: "Supermercado Semanal (P\xE3o de A\xE7\xFAcar)", paid_by_id: "Leandro", split_type: "50/50", category: "Alimenta\xE7\xE3o" /* ALIMENTACAO */, date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0], is_recurring: false },
-  { id: "exp_2", value: 1200, currency: "R$", description: "Aluguel & Condom\xEDnio", paid_by_id: "Kaisa", split_type: "50/50", category: "Moradia" /* MORADIA */, date: new Date(Date.now() - 4 * 24 * 36e5).toISOString().split("T")[0], is_recurring: true },
-  { id: "exp_3", value: 85, currency: "R$", description: "Rem\xE9dios Higiene Pet Shop (Luke)", paid_by_id: "Kaisa", split_type: "custom", custom_percent: 60, category: "Pets" /* PETS */, date: new Date(Date.now() - 2 * 24 * 36e5).toISOString().split("T")[0], is_recurring: false },
-  { id: "exp_4", value: 160, currency: "R$", description: "Cinema e Pipoca (Divertidamente)", paid_by_id: "Leandro", split_type: "paid_all", category: "Lazer" /* LAZER */, date: new Date(Date.now() - 5 * 24 * 36e5).toISOString().split("T")[0], is_recurring: false }
-];
-var DEFAULT_MEMORIES = [
-  {
-    id: "mem_1",
-    url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=600",
-    description: "Nossos sorrisos congelados na primeira que fomos \xE0 praia juntos!",
-    date: `${(/* @__PURE__ */ new Date()).getFullYear() - 1}-01-10`,
-    location: "Ubatuba, SP",
-    album_name: "Praia e Ver\xE3o",
-    created_at: new Date(Date.now() - 365 * 24 * 3600 * 1e3).toISOString()
-  },
-  {
-    id: "mem_2",
-    url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=600",
-    description: "O dia que pegamos as chaves do nosso cantinho. Choro e emo\xE7\xE3o!",
-    date: `${(/* @__PURE__ */ new Date()).getFullYear()}-03-15`,
-    location: "S\xE3o Paulo, SP",
-    album_name: "Nosso Apartamento",
-    created_at: new Date(Date.now() - 60 * 24 * 3600 * 1e3).toISOString()
-  },
-  {
-    id: "mem_3",
-    url: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=600",
-    description: "Luke dormindo com a l\xEDngua pra fora, n\xE3o aguentamos e tivemos que tirar foto.",
-    date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-    location: "Em casa",
-    album_name: "Ador\xE1vel Luke",
-    created_at: (/* @__PURE__ */ new Date()).toISOString()
-  }
-];
-var DEFAULT_MOODS = [
-  { id: "mood_1", user_id: "Leandro", mood: "\xD3timo" /* OTIMO */, note: "Reuni\xE3o de sprint deu super certo hoje!", share_note: true, date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0] },
-  { id: "mood_2", user_id: "Kaisa", mood: "Bem" /* BEM */, note: "Rotina corrida mas tudo sob controle", share_note: false, date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0] },
-  { id: "mood_prev_1", user_id: "Leandro", mood: "Bem" /* BEM */, date: new Date(Date.now() - 864e5).toISOString().split("T")[0], share_note: false },
-  { id: "mood_prev_2", user_id: "Kaisa", mood: "Cansado" /* CANSADO */, note: "Faculdade cansativa demais", date: new Date(Date.now() - 864e5).toISOString().split("T")[0], share_note: true },
-  { id: "mood_prev_3", user_id: "Leandro", mood: "Ansioso" /* ANSIOSO */, date: new Date(Date.now() - 2 * 864e5).toISOString().split("T")[0], share_note: false },
-  { id: "mood_prev_4", user_id: "Kaisa", mood: "\xD3timo" /* OTIMO */, date: new Date(Date.now() - 2 * 864e5).toISOString().split("T")[0], share_note: false }
-];
-var DEFAULT_WISHLIST = [
-  { id: "wish_1", name: "Smart TV 4K 55 Polegadas", priority: "Alta", category: "Para o Lar" /* LAR */, link: "https://example.com/tv", estimated_price: 2500, added_by: "Kaisa", saving_goal: 2500, saving_saved: 1200 },
-  { id: "wish_2", name: "Anel de Prata Minimalista", priority: "M\xE9dia", category: "Pessoal" /* PESSOAL */, link: "https://example.com/ring", estimated_price: 180, is_private_to_partner: true, added_by: "Leandro" },
-  // Surprise to Kaisa
-  { id: "wish_3", name: "M\xE1quina de Caf\xE9 Espresso Exclusiva", priority: "M\xE9dia", category: "Para o Lar" /* LAR */, estimated_price: 950, added_by: "Leandro", saving_goal: 950, saving_saved: 300 },
-  { id: "wish_4", name: "Passagem de bal\xE3o em Boituva", priority: "Alta", category: "Experi\xEAncias" /* EXPERIENCIA */, estimated_price: 800, added_by: "Ambos", saving_goal: 800, saving_saved: 800 }
-  // fully funded!
-];
-var DEFAULT_RECIPES = [
-  {
-    id: "rec_1",
-    title: "Macarr\xE3o Cremoso de Manjeric\xE3o",
-    ingredients: ["Macarr\xE3o Penne - 300g", "Molho de tomate - 1 lata", "Manjeric\xE3o fresco - 1 punhado", "Creme de leite - 1 caixinha", "Alho amassado - 2 dentes", "Azeite de oliva"],
-    instructions: "1. Cozinhe o penne em \xE1gua salgada at\xE9 ficar al dente.\n2. Refogue o alho no azeite, adicione o molho de tomate e manjeric\xE3o, cozinhe por 5 min.\n3. Misture o creme de leite no molho em fogo baixo.\n4. Escorra a massa e envolva-a completamente no creme arom\xE1tico. Sirva quente com queijo ralado.",
-    duration: 20,
-    portions: 2,
-    couple_rating: "Favorita",
-    tags: ["r\xE1pida", "econ\xF4mica", "vegetariana"]
-  },
-  {
-    id: "rec_2",
-    title: "Escondidinho de Carne Seca",
-    ingredients: ["Mandioca cozida - 1kg", "Carne seca desfiada dessalgada - 500g", "Cebola picada - 1 un", "Manteiga - 2 colheres", "Leite integral - 1 x\xEDcara", "Queijo coalho ralado - 150g"],
-    instructions: "1. Amasse a mandioca quente com manteiga e leite at\xE9 virar um pur\xEA homog\xEAneo.\n2. Refogue a carne seca com cebola at\xE9 dourar.\n3. Num refrat\xE1rio, fa\xE7a uma camada de carne, cubra com o pur\xEA de mandioca e polvilhe o queijo coalho.\n4. Leve ao forno para gratinar por 20 minutos a 200\xB0C.",
-    duration: 50,
-    portions: 3,
-    couple_rating: "Gostamos",
-    tags: ["especial"]
-  }
-];
-var DEFAULT_MEAL_PLAN = [
-  { id: "Segunda-Caf\xE9", day: "Segunda", meal_type: "Caf\xE9", custom_text: "Mam\xE3o, ovos mexidos e caf\xE9 puro" },
-  { id: "Segunda-Almo\xE7o", day: "Segunda", meal_type: "Almo\xE7o", recipe_id: "rec_1" },
-  // penne
-  { id: "Segunda-Jantar", day: "Segunda", meal_type: "Jantar", custom_text: "Sopa leve de legumes e torrada" },
-  { id: "Quarta-Jantar", day: "Quarta", meal_type: "Jantar", recipe_id: "rec_2" }
-  // escondidinho
-];
-var DEFAULT_INVENTORY = [
-  { id: "inv_1", name: "Arroz agulhinha", quantity: 2, unit: "kg", min_quantity: 1 },
-  { id: "inv_2", name: "Caf\xE9 Gourmet mo\xEDdo", quantity: 0.5, unit: "kg", min_quantity: 0.5 },
-  { id: "inv_3", name: "A\xE7\xFAcar demerara", quantity: 0.2, unit: "kg", min_quantity: 0.5 },
-  // low stock! Should auto sug
-  { id: "inv_4", name: "Sabonete l\xEDquido corpo", quantity: 1, unit: "unidade", min_quantity: 2 },
-  // low stock! Should auto sug
-  { id: "inv_5", name: "Detergente de Ma\xE7\xE3", quantity: 1, unit: "unidade", min_quantity: 1 }
-];
-var DEFAULT_REWARDS = [
-  { id: "feet_massage", title: "Massagem nos P\xE9s de 30min", cost: 65, desc: "Moz\xE3o massageia seus p\xE9s ap\xF3s um dia tenso de rotina.", emoji: "\u{1F486}\u200D\u2642\uFE0F" },
-  { id: "breakfast_bed", title: "Caf\xE9 da Manh\xE3 na Cama", cost: 95, desc: "Servido com torrada, caf\xE9 quentinho e beijinhos de bom dia.", emoji: "\u2615" },
-  { id: "movie_choice", title: "Escolha Soberana do Filme", cost: 35, desc: "Decide o filme de hoje sem receber reclama\xE7\xF5es do parceiro.", emoji: "\u{1F3AC}" },
-  { id: "no_dishes", title: "Folga da Lou\xE7a por 1 Dia", cost: 50, desc: "Isen\xE7\xE3o integral de lavar lou\xE7a de qualquer refei\xE7\xE3o do dia.", emoji: "\u{1F9FC}" },
-  { id: "dream_dessert", title: "Sobremesa Especial do Amor", cost: 75, desc: "Moz\xE3o prepara ou compra o doce ou bolo que voc\xEA pedir.", emoji: "\u{1F370}" },
-  { id: "full_massage", title: "Massageador nos Ombros & Costas", cost: 120, desc: "Sess\xE3o caprichada com \xF3leos relaxantes e sil\xEAncio absoluto.", emoji: "\u{1F56F}\uFE0F" }
-];
-var DEFAULT_QUESTS = [
-  { id: "quest_1", title: "Guardi\xF5es da Faxina", description: "Concluir 3 tarefas de limpeza no painel.", points: 20, type: "Faxina", target_count: 3, current_count: 0, completed: false },
-  { id: "quest_2", title: "Dupla Harmonia", description: "Ambos fazerem o check-in de humor de hoje.", points: 15, type: "Afeto", target_count: 2, current_count: 0, completed: false },
-  { id: "quest_3", title: "Menu N\xF3sDois", description: "Registrar receitas especiais e favoritas.", points: 25, type: "Culin\xE1ria", target_count: 1, current_count: 0, completed: false }
-];
-var DBStore = class {
-  constructor() {
-    this.load();
-  }
-  load() {
-    if (import_fs.default.existsSync(DB_FILE)) {
-      try {
-        const raw = import_fs.default.readFileSync(DB_FILE, "utf-8");
-        this.data = JSON.parse(raw);
-        if (!this.data.rewards) {
-          this.data.rewards = [...DEFAULT_REWARDS];
-        }
-        if (!this.data.quests) {
-          this.data.quests = [...DEFAULT_QUESTS];
-        }
-        if (!this.data.quickNotes) {
-          this.data.quickNotes = [];
-        }
-        if (!this.data.couples) {
-          this.data.couples = {
-            "couple_1": { ...this.data.couple }
-          };
-        }
-        if (!this.data.accounts) {
-          this.data.accounts = [
-            { email: "leandro@nosdois.com", passwordHash: "123456", userId: "Leandro", coupleId: "couple_1" },
-            { email: "kaisa@nosdois.com", passwordHash: "123456", userId: "Kaisa", coupleId: "couple_1" }
-          ];
-        }
-        if (!this.data.couplesUsers) {
-          this.data.couplesUsers = {
-            "couple_1": { ...this.data.users }
-          };
-        }
-        if (!this.data.pets) {
-          this.data.pets = [];
-        }
-        if (!this.data.fixedFunctions) {
-          this.data.fixedFunctions = [];
-        }
-        if (!this.data.activityReactions) {
-          this.data.activityReactions = [];
-        }
-        if (!this.data.monthlyAccounts) {
-          this.data.monthlyAccounts = [];
-        }
-      } catch (err) {
-        console.error("Error reading database file, resetting to seeds", err);
-        this.resetToDefaults();
-      }
-    } else {
-      this.resetToDefaults();
-    }
-  }
-  save() {
-    try {
-      import_fs.default.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), "utf-8");
-    } catch (err) {
-      console.error("Error writing database file", err);
-    }
-  }
-  resetToDefaults() {
-    this.data = {
-      users: { ...DEFAULT_USERS },
-      couple: { ...DEFAULT_COUPLE },
-      couples: {
-        "couple_1": { ...DEFAULT_COUPLE }
-      },
-      couplesUsers: {
-        "couple_1": { ...DEFAULT_USERS }
-      },
-      accounts: [
-        { email: "leandro@nosdois.com", passwordHash: "123456", userId: "Leandro", coupleId: "couple_1" },
-        { email: "kaisa@nosdois.com", passwordHash: "123456", userId: "Kaisa", coupleId: "couple_1" }
-      ],
-      tasks: [...DEFAULT_TASKS],
-      events: [...DEFAULT_EVENTS],
-      shopping: [...DEFAULT_SHOPPING],
-      expenses: [...DEFAULT_EXPENSES],
-      memories: [...DEFAULT_MEMORIES],
-      moods: [...DEFAULT_MOODS],
-      wishlist: [...DEFAULT_WISHLIST],
-      recipes: [...DEFAULT_RECIPES],
-      mealPlan: [...DEFAULT_MEAL_PLAN],
-      inventory: [...DEFAULT_INVENTORY],
-      rewards: [...DEFAULT_REWARDS],
-      quests: [...DEFAULT_QUESTS],
-      quickNotes: [],
-      pets: [],
-      fixedFunctions: [],
-      activityReactions: [],
-      monthlyAccounts: []
-    };
-    this.save();
-  }
-  // General Access
-  getStore() {
-    return this.data;
-  }
-  saveStore() {
-    this.save();
-  }
-};
-var db = new DBStore();
+// Parsers
+app.use(express.json({ limit: "20mb" }));
 
-// server.ts
-var import_genai = require("@google/genai");
-var app = (0, import_express.default)();
-var PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
-app.use(import_express.default.json({ limit: "20mb" }));
+// Custom simple CORS headers
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -399,7 +42,9 @@ app.use((req, res, next) => {
   }
   next();
 });
-function getRequestCredentials(req) {
+
+// Helper to extract coupleId and userId from the request
+function getRequestCredentials(req: express.Request) {
   const coupleId = req.headers["x-couple-id"] || req.query.coupleId || req.body.coupleId;
   const userId = req.headers["x-user-id"] || req.query.userId || req.body.userId;
   return {
@@ -407,33 +52,24 @@ function getRequestCredentials(req) {
     userId: typeof userId === "string" ? userId : "Leandro"
   };
 }
+
+// Middleware to automatically capture coupleId on pushed items
 app.use((req, res, next) => {
   const { coupleId } = getRequestCredentials(req);
   const store = db.getStore();
+  
   const listsToScope = [
-    "tasks",
-    "events",
-    "shopping",
-    "expenses",
-    "memories",
-    "moods",
-    "wishlist",
-    "recipes",
-    "mealPlan",
-    "inventory",
-    "rewards",
-    "quests",
-    "quickNotes",
-    "pets",
-    "fixedFunctions",
-    "activityReactions",
-    "monthlyAccounts"
+    "tasks", "events", "shopping", "expenses", "memories", "moods",
+    "wishlist", "recipes", "mealPlan", "inventory", "rewards", "quests", "quickNotes", "pets",
+    "fixedFunctions", "activityReactions", "monthlyAccounts"
   ];
-  listsToScope.forEach((key) => {
-    const list = store[key];
+  
+  listsToScope.forEach(key => {
+    const list = (store as any)[key];
     if (list && Array.isArray(list)) {
-      list.push = function(...items) {
-        items.forEach((item) => {
+      // Overwrite push to intercept and inject coupleId
+      (list as any).push = function(...items: any[]) {
+        items.forEach(item => {
           if (item && typeof item === "object") {
             item.coupleId = coupleId;
           }
@@ -442,21 +78,24 @@ app.use((req, res, next) => {
       };
     }
   });
+  
   next();
 });
-var aiClient = null;
-function getAiClient() {
+
+// Lazy client for Google Gen AI
+let aiClient: GoogleGenAI | null = null;
+function getAiClient(): GoogleGenAI | null {
   if (!aiClient) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
       try {
-        aiClient = new import_genai.GoogleGenAI({
+        aiClient = new GoogleGenAI({
           apiKey,
           httpOptions: {
             headers: {
-              "User-Agent": "aistudio-build"
-            }
-          }
+              "User-Agent": "aistudio-build",
+            },
+          },
         });
       } catch (err) {
         console.error("Failed to initialize GoogleGenAI:", err);
@@ -465,7 +104,16 @@ function getAiClient() {
   }
   return aiClient;
 }
-function getCoupleAndUsers(store, coupleId) {
+
+// ==========================================
+// API REST ENDPOINTS
+// ==========================================
+
+// ==========================================
+// HELPERS FOR MULTI-TENANCY & AUTHENTICATION
+// ==========================================
+
+function getCoupleAndUsers(store: any, coupleId: string) {
   if (!store.couples) {
     store.couples = {};
   }
@@ -509,31 +157,39 @@ function getCoupleAndUsers(store, coupleId) {
     users: store.couplesUsers[coupleId]
   };
 }
-function logActivityForCouple(store, coupleId, prefix, message) {
+
+function logActivityForCouple(store: any, coupleId: string, prefix: string, message: string) {
   const { couple } = getCoupleAndUsers(store, coupleId);
   if (!couple.unlocked_achievements) {
     couple.unlocked_achievements = [];
   }
-  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  const timestamp = new Date().toISOString();
   couple.unlocked_achievements.push(`activity:${prefix}:${message}:${timestamp}`);
-  const nonActivities = couple.unlocked_achievements.filter((a) => !a.startsWith("activity:"));
-  const activities = couple.unlocked_achievements.filter((a) => a.startsWith("activity:"));
+  
+  const nonActivities = couple.unlocked_achievements.filter((a: string) => !a.startsWith("activity:"));
+  const activities = couple.unlocked_achievements.filter((a: string) => a.startsWith("activity:"));
   couple.unlocked_achievements = [...nonActivities, ...activities.slice(-40)];
 }
-function generateInviteCode() {
+
+function generateInviteCode(): string {
   const prefixes = ["AMOR", "CASAL", "LOVE", "PAR", "LAR", "VIDA"];
   const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const randomNumber = Math.floor(10 + Math.random() * 90);
+  const randomNumber = Math.floor(10 + Math.random() * 90); // 10 to 99
   return `${randomPrefix}${randomNumber}`;
 }
+
+// 1. Get database state scoped for current coupleId
 app.get("/api/state", (req, res) => {
   const { coupleId } = getRequestCredentials(req);
   const store = db.getStore();
   const { couple, users } = getCoupleAndUsers(store, coupleId);
-  const filterByCouple = (items) => {
+
+  // Filter items owned by this coupleId
+  const filterByCouple = (items: any[]) => {
     if (!items) return [];
-    return items.filter((item) => (item.coupleId || "couple_1") === coupleId);
+    return items.filter(item => (item.coupleId || "couple_1") === coupleId);
   };
+
   res.json({
     users,
     couple,
@@ -541,18 +197,16 @@ app.get("/api/state", (req, res) => {
     events: filterByCouple(store.events),
     shopping: filterByCouple(store.shopping),
     expenses: filterByCouple(store.expenses),
-    memories: filterByCouple(store.memories).map((m) => {
+    memories: filterByCouple(store.memories).map(m => {
       if (m.is_capsule && m.capsule_unlock_date) {
         const isLocked = new Date(m.capsule_unlock_date).getTime() > Date.now();
         if (isLocked) {
           return {
             ...m,
             isLocked: true,
-            url: "",
-            // Clear actual URL
-            description: m.description,
-            // Keep description hidden or clear? Let's hide the description or make it custom
-            masked_description: `\u{1F512} C\xE1psula do Tempo Selada at\xE9 ${new Date(m.capsule_unlock_date).toLocaleDateString("pt-BR")}`
+            url: "", // Clear actual URL
+            description: m.description, // Keep description hidden or clear? Let's hide the description or make it custom
+            masked_description: `🔒 Cápsula do Tempo Selada até ${new Date(m.capsule_unlock_date).toLocaleDateString("pt-BR")}`
           };
         }
       }
@@ -572,42 +226,52 @@ app.get("/api/state", (req, res) => {
     monthlyAccounts: filterByCouple(store.monthlyAccounts || [])
   });
 });
+
+// Real Authentic Coupling flow
+
+// SignUp / Registration for User 1
 app.post("/api/auth/register", (req, res) => {
   const { email, password, name, nickname, partner_nickname, color, avatar_url } = req.body;
   if (!email || !password || !name) {
-    return res.status(400).json({ error: "E-mail, senha e nome s\xE3o obrigat\xF3rios" });
+    return res.status(400).json({ error: "E-mail, senha e nome são obrigatórios" });
   }
+
   const store = db.getStore();
   if (!store.accounts) store.accounts = [];
-  const existingAccount = store.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
+
+  const existingAccount = store.accounts.find(a => a.email.toLowerCase() === email.toLowerCase());
   if (existingAccount) {
-    return res.status(400).json({ error: "Este email de conta j\xE1 est\xE1 registrado" });
+    return res.status(400).json({ error: "Este email de conta já está registrado" });
   }
-  const generatedCoupleId = "couple_" + Date.now() + "_" + Math.floor(Math.random() * 1e3);
+
+  const generatedCoupleId = "couple_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
   const generatedInviteCode = generateInviteCode();
+
+  // Create account
   store.accounts.push({
     email,
-    passwordHash: password,
-    // Simple plain text for mock project
-    userId: "Leandro",
-    // User 1 maps to Leandro internally
+    passwordHash: password, // Simple plain text for mock project
+    userId: "Leandro", // User 1 maps to Leandro internally
     coupleId: generatedCoupleId
   });
+
+  // Create Couple space
   if (!store.couples) store.couples = {};
   store.couples[generatedCoupleId] = {
     id: generatedCoupleId,
     invite_code: generatedInviteCode,
-    connected: false,
-    // Waiting for spouse code integration
+    connected: false, // Waiting for spouse code integration
     home_level: 1,
     total_points: 0,
     unlocked_achievements: []
   };
+
+  // Initialize Users profile
   if (!store.couplesUsers) store.couplesUsers = {};
   store.couplesUsers[generatedCoupleId] = {
     Leandro: {
       id: "Leandro",
-      name,
+      name: name,
       partner_nickname: partner_nickname || "Meu Amor",
       color: color || "#3B82F6",
       timezone: "America/Sao_Paulo",
@@ -624,8 +288,11 @@ app.post("/api/auth/register", (req, res) => {
       points_weekly: 0
     }
   };
-  logActivityForCouple(store, generatedCoupleId, "register", `\u{1F3E0} Lar digital iniciado por ${name}!`);
+
+  logActivityForCouple(store, generatedCoupleId, "register", `🏠 Lar digital iniciado por ${name}!`);
+
   db.saveStore();
+
   res.json({
     success: true,
     email,
@@ -635,18 +302,24 @@ app.post("/api/auth/register", (req, res) => {
     user: store.couplesUsers[generatedCoupleId]["Leandro"]
   });
 });
+
+// Login for existing users
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ error: "E-mail e senha s\xE3o obrigat\xF3rios" });
+    return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
   }
+
   const store = db.getStore();
   if (!store.accounts) store.accounts = [];
-  const account = store.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase() && a.passwordHash === password);
+
+  const account = store.accounts.find(a => a.email.toLowerCase() === email.toLowerCase() && a.passwordHash === password);
   if (!account) {
     return res.status(401).json({ error: "E-mail ou senha incorretos" });
   }
+
   const { couple, users } = getCoupleAndUsers(store, account.coupleId);
+
   res.json({
     success: true,
     email,
@@ -657,23 +330,31 @@ app.post("/api/auth/login", (req, res) => {
     users
   });
 });
+
+// Verify Couple code (for User 2 login route)
 app.post("/api/auth/use-code", (req, res) => {
   const { inviteCode } = req.body;
   if (!inviteCode) {
-    return res.status(400).json({ error: "C\xF3digo \xE9 obrigat\xF3rio" });
+    return res.status(400).json({ error: "Código é obrigatório" });
   }
+
   const store = db.getStore();
   if (!store.couples) store.couples = {};
+
   const cleanCode = inviteCode.trim().toUpperCase();
-  const coupleId = Object.keys(store.couples).find((cid) => store.couples[cid].invite_code === cleanCode);
+  const coupleId = Object.keys(store.couples).find(cid => store.couples![cid].invite_code === cleanCode);
+
   if (!coupleId) {
-    return res.status(404).json({ error: "C\xF3digo do casal inv\xE1lido ou j\xE1 conectado!" });
+    return res.status(404).json({ error: "Código do casal inválido ou já conectado!" });
   }
+
   const couple = store.couples[coupleId];
   if (couple.connected) {
-    return res.status(400).json({ error: "C\xF3digo j\xE1 foi utilizado e o casal j\xE1 se deparou!" });
+    return res.status(400).json({ error: "Código já foi utilizado e o casal já se deparou!" });
   }
+
   const { users } = getCoupleAndUsers(store, coupleId);
+
   res.json({
     success: true,
     coupleId,
@@ -681,41 +362,55 @@ app.post("/api/auth/use-code", (req, res) => {
     firstPartnerName: users["Leandro"]?.name || "Parceiro"
   });
 });
+
+// Complete register for spouse (User 2)
 app.post("/api/auth/complete-partner", (req, res) => {
   const { coupleId, email, password, name, nickname, avatar_url } = req.body;
   if (!coupleId || !email || !password || !name) {
-    return res.status(400).json({ error: "Todos os campos de cadastro s\xE3o obrigat\xF3rios" });
+    return res.status(400).json({ error: "Todos os campos de cadastro são obrigatórios" });
   }
+
   const store = db.getStore();
   if (!store.accounts) store.accounts = [];
-  const existingAccount = store.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
+
+  const existingAccount = store.accounts.find(a => a.email.toLowerCase() === email.toLowerCase());
   if (existingAccount) {
-    return res.status(400).json({ error: "Este email de conta j\xE1 est\xE1 registrado" });
+    return res.status(400).json({ error: "Este email de conta já está registrado" });
   }
+
   const { couple, users } = getCoupleAndUsers(store, coupleId);
+
   if (couple.connected) {
-    return res.status(400).json({ error: "Casal j\xE1 conectado para este c\xF3digo!" });
+    return res.status(400).json({ error: "Casal já conectado para este código!" });
   }
+
+  // Register account for Partner 2
   store.accounts.push({
     email,
     passwordHash: password,
-    userId: "Kaisa",
-    // User 2 maps to Kaisa internally
+    userId: "Kaisa", // User 2 maps to Kaisa internally
     coupleId
   });
+
+  // Upgrade spouse profile info
   users["Kaisa"] = {
     id: "Kaisa",
-    name,
+    name: name,
     partner_nickname: nickname || "Amor",
     color: "#EC4899",
     timezone: "America/Sao_Paulo",
     avatar_url: avatar_url || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
     points_weekly: 0
   };
+
+  // Mark connected, clear connection code
   couple.connected = true;
   couple.invite_code = null;
-  logActivityForCouple(store, coupleId, "couple_connected", `\u{1F49C} ${name} entrou no lar compartilhado com ${users["Leandro"].name}!`);
+
+  logActivityForCouple(store, coupleId, "couple_connected", `💜 ${name} entrou no lar compartilhado com ${users["Leandro"].name}!`);
+
   db.saveStore();
+
   res.json({
     success: true,
     email,
@@ -726,69 +421,74 @@ app.post("/api/auth/complete-partner", (req, res) => {
     users
   });
 });
+
+// Delete account and all associated couple data
 app.post("/api/auth/delete-account", (req, res) => {
   const { coupleId } = getRequestCredentials(req);
   if (!coupleId || coupleId === "couple_1") {
-    return res.status(400).json({ error: "Para fins de demonstra\xE7\xE3o, n\xE3o \xE9 permitido excluir o lar padr\xE3o de simula\xE7\xE3o." });
+    return res.status(400).json({ error: "Para fins de demonstração, não é permitido excluir o lar padrão de simulação." });
   }
+
   const store = db.getStore();
+
+  // Delete accounts from authorization store
   if (store.accounts) {
-    store.accounts = store.accounts.filter((a) => a.coupleId !== coupleId);
+    store.accounts = store.accounts.filter(a => a.coupleId !== coupleId);
   }
+
+  // Delete couple metadata
   if (store.couples) {
     delete store.couples[coupleId];
   }
+
+  // Delete users entries
   if (store.couplesUsers) {
     delete store.couplesUsers[coupleId];
   }
+
+  // Filter out scoped items belonging to this couple
   const listsToScope = [
-    "tasks",
-    "events",
-    "shopping",
-    "expenses",
-    "memories",
-    "moods",
-    "wishlist",
-    "recipes",
-    "mealPlan",
-    "inventory",
-    "rewards",
-    "quests",
-    "quickNotes",
-    "pets",
-    "fixedFunctions",
-    "activityReactions",
-    "monthlyAccounts"
+    "tasks", "events", "shopping", "expenses", "memories", "moods",
+    "wishlist", "recipes", "mealPlan", "inventory", "rewards", "quests", "quickNotes", "pets",
+    "fixedFunctions", "activityReactions", "monthlyAccounts"
   ];
-  listsToScope.forEach((key) => {
-    const list = store[key];
+
+  listsToScope.forEach(key => {
+    const list = (store as any)[key];
     if (list && Array.isArray(list)) {
-      store[key] = list.filter((item) => item.coupleId !== coupleId);
+      (store as any)[key] = list.filter((item: any) => item.coupleId !== coupleId);
     }
   });
+
   db.saveStore();
+
   res.json({
     success: true,
-    message: "Todas as contas e hist\xF3rico do casal foram exclu\xEDdos com sucesso. At\xE9 breve!"
+    message: "Todas as contas e histórico do casal foram excluídos com sucesso. Até breve!"
   });
 });
+
+// Reset store to original seed data (scoped to Demo space)
 app.post("/api/profile/reset", (req, res) => {
   db.resetToDefaults();
   res.json({ success: true, message: "Banco de dados reiniciado com sucesso!", state: db.getStore() });
 });
+
+// Update Partner, Name, Nickname, Settings and Preferences (scoped)
 app.post("/api/profile/update", (req, res) => {
   const { coupleId } = getRequestCredentials(req);
   const { user_id, name, nickname, partner_nickname, color, timezone, avatar_url, preferences } = req.body;
   const store = db.getStore();
   const { users } = getCoupleAndUsers(store, coupleId);
+  
   if (users[user_id]) {
     if (name) {
       users[user_id].name = name;
     }
-    if (nickname !== void 0) {
+    if (nickname !== undefined) {
       users[user_id].nickname = nickname;
     }
-    if (partner_nickname !== void 0) {
+    if (partner_nickname !== undefined) {
       users[user_id].partner_nickname = partner_nickname;
     }
     if (color) {
@@ -800,7 +500,7 @@ app.post("/api/profile/update", (req, res) => {
     if (avatar_url) {
       users[user_id].avatar_url = avatar_url;
     }
-    if (preferences !== void 0) {
+    if (preferences !== undefined) {
       users[user_id].preferences = {
         ...users[user_id].preferences,
         ...preferences
@@ -812,6 +512,8 @@ app.post("/api/profile/update", (req, res) => {
     res.status(404).json({ error: "User not found" });
   }
 });
+
+// Couple connection status: disconnect or link demo
 app.post("/api/couple/disconnect", (req, res) => {
   const { coupleId } = getRequestCredentials(req);
   const store = db.getStore();
@@ -820,6 +522,7 @@ app.post("/api/couple/disconnect", (req, res) => {
   db.saveStore();
   res.json({ success: true, couple });
 });
+
 app.post("/api/couple/reconnect", (req, res) => {
   const { coupleId } = getRequestCredentials(req);
   const store = db.getStore();
@@ -828,90 +531,121 @@ app.post("/api/couple/reconnect", (req, res) => {
   db.saveStore();
   res.json({ success: true, couple });
 });
-function logActivity(store, prefix, message) {
+
+// Helper for keeping a synchronized real-time activity feed inside unlocked_achievements
+function logActivity(store: any, prefix: string, message: string) {
   if (!store.couple.unlocked_achievements) {
     store.couple.unlocked_achievements = [];
   }
-  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  const timestamp = new Date().toISOString();
   store.couple.unlocked_achievements.push(`activity:${prefix}:${message}:${timestamp}`);
-  const nonActivities = store.couple.unlocked_achievements.filter((a) => !a.startsWith("activity:"));
-  const activities = store.couple.unlocked_achievements.filter((a) => a.startsWith("activity:"));
+  
+  // Keep last 40 activities to avoid array growing indefinitely
+  const nonActivities = store.couple.unlocked_achievements.filter((a: string) => !a.startsWith("activity:"));
+  const activities = store.couple.unlocked_achievements.filter((a: string) => a.startsWith("activity:"));
   store.couple.unlocked_achievements = [...nonActivities, ...activities.slice(-40)];
 }
+
+// Spend points to redeem a reward coupon
 app.post("/api/couple/redeem-reward", (req, res) => {
   const { reward_title, cost, user_id } = req.body;
   const store = db.getStore();
+  
   if (store.couple.total_points >= cost) {
     store.couple.total_points -= cost;
+    
+    // Log achievement / claim
     if (!store.couple.unlocked_achievements) {
       store.couple.unlocked_achievements = [];
     }
-    const timestampStr = (/* @__PURE__ */ new Date()).toISOString();
+    
+    const timestampStr = new Date().toISOString();
     store.couple.unlocked_achievements.push(`redeemed:${reward_title}:${user_id}:${timestampStr}`);
+    
     db.saveStore();
     res.json({ success: true, message: `Recompensa '${reward_title}' resgatada com sucesso por ${user_id}!`, state: db.getStore() });
   } else {
     res.status(400).json({ error: "Pontos do lar insuficientes para este resgate carinhoso." });
   }
 });
+
+// ================= TAREFAS MODULE =================
+
+// Create Task
 app.post("/api/tasks/create", (req, res) => {
   const { title, description, responsible_id, due_date, recurrence, category, priority, time_estimate } = req.body;
   if (!title) {
     return res.status(400).json({ error: "Title is required" });
   }
+  
   const store = db.getStore();
-  const newTask = {
+  const newTask: Task = {
     id: "task_" + Date.now(),
     title: title.slice(0, 80),
     description: description ? description.slice(0, 500) : "",
     responsible_id: responsible_id || "Ambos",
-    due_date: due_date || void 0,
+    due_date: due_date || undefined,
     recurrence: recurrence || "Nenhuma",
-    category: category || "Outro" /* OUTRO */,
-    priority: priority || "Normal" /* NORMAL */,
-    time_estimate: time_estimate ? parseInt(time_estimate, 10) : void 0,
-    points: priority === "Urgente" /* URGENTE */ ? 25 : 10,
+    category: category || TaskCategory.OUTRO,
+    priority: priority || TaskPriority.NORMAL,
+    time_estimate: time_estimate ? parseInt(time_estimate, 10) : undefined,
+    points: priority === TaskPriority.URGENTE ? 25 : 10,
     completed: false,
     archived: false,
     comments: []
   };
+
   store.tasks.push(newTask);
   db.saveStore();
   res.json({ success: true, task: newTask });
 });
+
+// Toggle Task Complete & Perform Gamification calculation
 app.post("/api/tasks/toggle", (req, res) => {
-  const { id, user_id, photo_proof } = req.body;
+  const { id, user_id, photo_proof } = req.body; // user_id is the person completing it
   const store = db.getStore();
-  const task = store.tasks.find((t) => t.id === id);
+  const task = store.tasks.find(t => t.id === id);
+  
   if (!task) {
     return res.status(404).json({ error: "Task not found" });
   }
+
   const wasCompleted = task.completed;
   task.completed = !task.completed;
+  
   if (task.completed) {
-    task.completed_at = (/* @__PURE__ */ new Date()).toISOString();
+    task.completed_at = new Date().toISOString();
     if (photo_proof) {
       task.photo_proof = photo_proof;
     }
-    let earnedPoints = task.priority === "Urgente" /* URGENTE */ ? 25 : 10;
+    
+    // Gamification Points
+    let earnedPoints = task.priority === TaskPriority.URGENTE ? 25 : 10;
+    
+    // Check if on-time deadline bonus (due_date exists and completed before or on that date)
     if (task.due_date) {
-      const todayStr = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const todayStr = new Date().toISOString().split("T")[0];
       if (todayStr <= task.due_date) {
-        earnedPoints += 5;
+        earnedPoints += 5; // +5 on-time completion bonus!
       }
     }
+    
+    // Allocate to the user who completed and the couple's total
     if (store.users[user_id]) {
       store.users[user_id].points_weekly += earnedPoints;
     }
     store.couple.total_points += earnedPoints;
+    
     logActivity(store, "task_completed", `${user_id} completou a tarefa '${task.title}' (+${earnedPoints} pontos!)`);
+
+    // Recorrência automática de tarefas (automatic reproduction of completed recurring tasks)
     if (task.recurrence && task.recurrence !== "Nenhuma") {
-      let baseDate = task.due_date ? /* @__PURE__ */ new Date(task.due_date + "T12:00:00") : /* @__PURE__ */ new Date();
+      let baseDate = task.due_date ? new Date(task.due_date + "T12:00:00") : new Date();
       if (isNaN(baseDate.getTime())) {
-        baseDate = /* @__PURE__ */ new Date();
+        baseDate = new Date();
       }
       const nextDate = new Date(baseDate);
-      if (task.recurrence === "Di\xE1ria") {
+      if (task.recurrence === "Diária") {
         nextDate.setDate(nextDate.getDate() + 1);
       } else if (task.recurrence === "Semanal") {
         nextDate.setDate(nextDate.getDate() + 7);
@@ -921,7 +655,8 @@ app.post("/api/tasks/toggle", (req, res) => {
         nextDate.setMonth(nextDate.getMonth() + 1);
       }
       const nextDueDateStr = nextDate.toISOString().split("T")[0];
-      const recurringTask = {
+      
+      const recurringTask: any = {
         id: "task_rec_" + Date.now(),
         title: task.title,
         description: task.description,
@@ -935,36 +670,43 @@ app.post("/api/tasks/toggle", (req, res) => {
         completed: false,
         archived: false,
         comments: [],
-        coupleId: task.coupleId
+        coupleId: (task as any).coupleId
       };
       store.tasks.push(recurringTask);
       logActivity(store, "task_recreated", `Agenda recorrente agendada para ${nextDueDateStr}: ${task.title}`);
     }
+
+    // Check if new Home Level reached (progress 100 points per level)
     const nextLevel = Math.floor(store.couple.total_points / 100) + 1;
     if (nextLevel > store.couple.home_level) {
       store.couple.home_level = nextLevel;
-      logActivity(store, "level_up", `\u{1F389} Parab\xE9ns! O lar subiu para o N\xEDvel ${nextLevel} com ${store.couple.total_points} pontos!`);
+      logActivity(store, "level_up", `🎉 Parabéns! O lar subiu para o Nível ${nextLevel} com ${store.couple.total_points} pontos!`);
     }
   } else {
-    let penaltyPoints = task.priority === "Urgente" /* URGENTE */ ? 25 : 10;
+    // Deduct when uncompleting (within 24h error margin)
+    let penaltyPoints = task.priority === TaskPriority.URGENTE ? 25 : 10;
     if (task.due_date) {
+      // assume it was on time
       penaltyPoints += 5;
     }
     if (store.users[user_id]) {
       store.users[user_id].points_weekly = Math.max(0, store.users[user_id].points_weekly - penaltyPoints);
     }
     store.couple.total_points = Math.max(0, store.couple.total_points - penaltyPoints);
-    task.completed_at = void 0;
-    task.photo_proof = void 0;
+    task.completed_at = undefined;
+    task.photo_proof = undefined;
     logActivity(store, "task_undone", `${user_id} reabriu a tarefa '${task.title}'.`);
   }
+
   db.saveStore();
   res.json({ success: true, task, couple: store.couple, users: store.users });
 });
+
+// Soft Delete / Archive
 app.post("/api/tasks/archive", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
-  const task = store.tasks.find((t) => t.id === id);
+  const task = store.tasks.find(t => t.id === id);
   if (task) {
     task.archived = !task.archived;
     db.saveStore();
@@ -973,150 +715,198 @@ app.post("/api/tasks/archive", (req, res) => {
     res.status(404).json({ error: "Task not found" });
   }
 });
+
+// Task Comment / Chat
 app.post("/api/tasks/comment", (req, res) => {
   const { task_id, author_id, text } = req.body;
   const store = db.getStore();
-  const task = store.tasks.find((t) => t.id === task_id);
+  const task = store.tasks.find(t => t.id === task_id);
+  
   if (!task) {
     return res.status(404).json({ error: "Task not found" });
   }
+
   const newComment = {
     id: "comment_" + Date.now(),
     author_id,
     text: text || "",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    timestamp: new Date().toISOString()
   };
+
   task.comments.push(newComment);
   db.saveStore();
   res.json({ success: true, comment: newComment, task });
 });
+
+
+// ================= SHOPPING & INVENTORY MODULE =================
+
+// Add Item
 app.post("/api/shopping/create", (req, res) => {
   const { name, category, quantity, unit, price, added_by, suggested, reason_suggested, monthId } = req.body;
   if (!name) {
     return res.status(400).json({ error: "Name is required" });
   }
+
   const store = db.getStore();
   const targetMonthId = monthId || "2026-05";
+  
+  // Clean duplicate checks (e.g. "leite" / "leite integral") in the same active list
   const lowercaseName = name.trim().toLowerCase();
   const duplicate = store.shopping.find(
-    (i) => !i.is_bought && (i.monthId === targetMonthId || !i.monthId && targetMonthId === "2026-05") && i.name.trim().toLowerCase() === lowercaseName
+    i => !i.is_bought && 
+         (i.monthId === targetMonthId || (!i.monthId && targetMonthId === "2026-05")) && 
+         i.name.trim().toLowerCase() === lowercaseName
   );
+
   if (duplicate) {
-    return res.json({
-      success: true,
-      warning: "Duplicate detected",
-      message: `O item '${name}' j\xE1 existe na lista pendente deste m\xEAs!`,
-      item: duplicate
+    return res.json({ 
+      success: true, 
+      warning: "Duplicate detected", 
+      message: `O item '${name}' já existe na lista pendente deste mês!`, 
+      item: duplicate 
     });
   }
-  let resolvedCategory = category || "Outros" /* OUTROS */;
+
+  // Auto Category Mapper helper
+  let resolvedCategory = category || ShoppingCategory.OUTROS;
   if (!category) {
-    const listHorti = ["banana", "ma\xE7\xE3", "tomate", "cebola", "alho", "laranja", "batata", "alface", "fruta", "legume"];
-    const listLati = ["leite", "queijo", "iogurte", "manteiga", "requeij\xE3o", "creme", "sorvete", "yakult"];
-    const listCarne = ["carne", "frango", "peixe", "alcatra", "mignon", "porco", "peito", "lingui\xE7a", "salsicha"];
-    const listLimp = ["detergente", "sab\xE3o", "desinfetante", "cloro", "pano", "amaciante", "\xE1gua sanit\xE1ria"];
-    const listHigi = ["papel higi\xEAnico", "sabonete", "shampoo", "creme de dente", "pasta de dente", "fio dental"];
-    const isMatch = (arr) => arr.some((kw) => lowercaseName.includes(kw));
-    if (isMatch(listHorti)) resolvedCategory = "Hortifr\xFAti" /* HORTIFRUTI */;
-    else if (isMatch(listLati)) resolvedCategory = "Latic\xEDnios" /* LATICINIOS */;
-    else if (isMatch(listCarne)) resolvedCategory = "Carnes" /* CARNES */;
-    else if (isMatch(listLimp)) resolvedCategory = "Limpeza" /* LIMPEZA */;
-    else if (isMatch(listHigi)) resolvedCategory = "Higiene" /* HIGIENE */;
+    const listHorti = ["banana", "maçã", "tomate", "cebola", "alho", "laranja", "batata", "alface", "fruta", "legume"];
+    const listLati = ["leite", "queijo", "iogurte", "manteiga", "requeijão", "creme", "sorvete", "yakult"];
+    const listCarne = ["carne", "frango", "peixe", "alcatra", "mignon", "porco", "peito", "linguiça", "salsicha"];
+    const listLimp = ["detergente", "sabão", "desinfetante", "cloro", "pano", "amaciante", "água sanitária"];
+    const listHigi = ["papel higiênico", "sabonete", "shampoo", "creme de dente", "pasta de dente", "fio dental"];
+
+    const isMatch = (arr: string[]) => arr.some(kw => lowercaseName.includes(kw));
+
+    if (isMatch(listHorti)) resolvedCategory = ShoppingCategory.HORTIFRUTI;
+    else if (isMatch(listLati)) resolvedCategory = ShoppingCategory.LATICINIOS;
+    else if (isMatch(listCarne)) resolvedCategory = ShoppingCategory.CARNES;
+    else if (isMatch(listLimp)) resolvedCategory = ShoppingCategory.LIMPEZA;
+    else if (isMatch(listHigi)) resolvedCategory = ShoppingCategory.HIGIENE;
   }
-  const newItem = {
+
+  const newItem: ShoppingItem = {
     id: "shop_" + Date.now(),
     name,
     category: resolvedCategory,
     quantity: quantity ? parseFloat(quantity) : 1,
     unit: unit || "unidades",
-    price: price ? parseFloat(price) : void 0,
+    price: price ? parseFloat(price) : undefined,
     is_bought: false,
     added_by: added_by || "Parceiro",
     suggested: !!suggested,
-    reason_suggested: reason_suggested || void 0,
+    reason_suggested: reason_suggested || undefined,
     monthId: targetMonthId,
     listStatus: "active"
   };
+
   store.shopping.push(newItem);
   db.saveStore();
   res.json({ success: true, item: newItem });
 });
+
+// Add Multiple Items in Bulk (Quick Add)
 app.post("/api/shopping/create-bulk", (req, res) => {
   const { items, added_by, monthId } = req.body;
   if (!items || !Array.isArray(items)) {
     return res.status(400).json({ error: "Items array is required" });
   }
+
   const store = db.getStore();
-  const addedItems = [];
-  const duplicates = [];
+  const addedItems: any[] = [];
+  const duplicates: string[] = [];
   const targetMonthId = monthId || "2026-05";
+
   for (const item of items) {
     if (!item.name) continue;
+    
     const name = item.name.trim();
     const lowercaseName = name.toLowerCase();
+    
+    // Check duplicate
     const duplicate = store.shopping.find(
-      (i) => !i.is_bought && (i.monthId === targetMonthId || !i.monthId && targetMonthId === "2026-05") && i.name.trim().toLowerCase() === lowercaseName
+      i => !i.is_bought && 
+           (i.monthId === targetMonthId || (!i.monthId && targetMonthId === "2026-05")) && 
+           i.name.trim().toLowerCase() === lowercaseName
     );
+
     if (duplicate) {
       duplicates.push(name);
       continue;
     }
-    let resolvedCategory = item.category || "Outros" /* OUTROS */;
+
+    // Auto Category Mapper helper
+    let resolvedCategory = item.category || ShoppingCategory.OUTROS;
     if (!item.category) {
-      const listHorti = ["banana", "ma\xE7\xE3", "tomate", "cebola", "alho", "laranja", "batata", "alface", "fruta", "legume"];
-      const listLati = ["leite", "queijo", "iogurte", "manteiga", "requeij\xE3o", "creme", "sorvete", "yakult"];
-      const listCarne = ["carne", "frango", "peixe", "alcatra", "mignon", "porco", "peito", "lingui\xE7a", "salsicha"];
-      const listLimp = ["detergente", "sab\xE3o", "desinfetante", "cloro", "pano", "amaciante", "\xE1gua sanit\xE1ria"];
-      const listHigi = ["papel higi\xEAnico", "sabonete", "shampoo", "creme de dente", "pasta de dente", "fio dental"];
-      const isMatch = (arr) => arr.some((kw) => lowercaseName.includes(kw));
-      if (isMatch(listHorti)) resolvedCategory = "Hortifr\xFAti" /* HORTIFRUTI */;
-      else if (isMatch(listLati)) resolvedCategory = "Latic\xEDnios" /* LATICINIOS */;
-      else if (isMatch(listCarne)) resolvedCategory = "Carnes" /* CARNES */;
-      else if (isMatch(listLimp)) resolvedCategory = "Limpeza" /* LIMPEZA */;
-      else if (isMatch(listHigi)) resolvedCategory = "Higiene" /* HIGIENE */;
+      const listHorti = ["banana", "maçã", "tomate", "cebola", "alho", "laranja", "batata", "alface", "fruta", "legume"];
+      const listLati = ["leite", "queijo", "iogurte", "manteiga", "requeijão", "creme", "sorvete", "yakult"];
+      const listCarne = ["carne", "frango", "peixe", "alcatra", "mignon", "porco", "peito", "linguiça", "salsicha"];
+      const listLimp = ["detergente", "sabão", "desinfetante", "cloro", "pano", "amaciante", "água sanitária"];
+      const listHigi = ["papel higiênico", "sabonete", "shampoo", "creme de dente", "pasta de dente", "fio dental"];
+
+      const isMatch = (arr: string[]) => arr.some(kw => lowercaseName.includes(kw));
+
+      if (isMatch(listHorti)) resolvedCategory = ShoppingCategory.HORTIFRUTI;
+      else if (isMatch(listLati)) resolvedCategory = ShoppingCategory.LATICINIOS;
+      else if (isMatch(listCarne)) resolvedCategory = ShoppingCategory.CARNES;
+      else if (isMatch(listLimp)) resolvedCategory = ShoppingCategory.LIMPEZA;
+      else if (isMatch(listHigi)) resolvedCategory = ShoppingCategory.HIGIENE;
     }
-    const newItem = {
+
+    const newItem: ShoppingItem = {
       id: "shop_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
       name,
       category: resolvedCategory,
       quantity: item.quantity ? parseFloat(item.quantity) : 1,
       unit: item.unit || "unidades",
-      price: item.price ? parseFloat(item.price) : void 0,
+      price: item.price ? parseFloat(item.price) : undefined,
       is_bought: false,
       added_by: added_by || "Parceiro",
       monthId: targetMonthId,
       listStatus: "active"
     };
+
     store.shopping.push(newItem);
     addedItems.push(newItem);
   }
+
   db.saveStore();
   res.json({ success: true, addedItems, duplicates });
 });
+
+// Toggle Bought - simple checkoff (removed automatic inventory sync or complicated automatic additions)
 app.post("/api/shopping/toggle", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
-  const item = store.shopping.find((i) => i.id === id);
+  const item = store.shopping.find(i => i.id === id);
   if (!item) {
     return res.status(404).json({ error: "Item not found" });
   }
+
   item.is_bought = !item.is_bought;
-  item.bought_at = item.is_bought ? (/* @__PURE__ */ new Date()).toISOString() : void 0;
+  item.bought_at = item.is_bought ? new Date().toISOString() : undefined;
+
   if (item.is_bought) {
-    logActivity(store, "shopping", `\u{1F6D2} Compra Selecionada: '${item.name}' (${item.quantity} ${item.unit}) foi riscado.`);
+    logActivity(store, "shopping", `🛒 Compra Selecionada: '${item.name}' (${item.quantity} ${item.unit}) foi riscado.`);
   } else {
-    logActivity(store, "shopping_removed", `\u{1F6D2} Compra Desmarcada: '${item.name}' est\xE1 pendente.`);
+    logActivity(store, "shopping_removed", `🛒 Compra Desmarcada: '${item.name}' está pendente.`);
   }
+
   db.saveStore();
   res.json({ success: true, item, shopping: store.shopping });
 });
+
+// Delete item
 app.post("/api/shopping/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
-  store.shopping = store.shopping.filter((i) => i.id !== id);
+  store.shopping = store.shopping.filter(i => i.id !== id);
   db.saveStore();
   res.json({ success: true });
 });
+
+// Update or set budget for a given month
 app.post("/api/shopping/budget", (req, res) => {
   const { monthId, budget } = req.body;
   if (!monthId) {
@@ -1130,30 +920,40 @@ app.post("/api/shopping/budget", (req, res) => {
   db.saveStore();
   res.json({ success: true, shoppingBudgets: store.couple.shoppingBudgets });
 });
+
+// Update single item fields inline in real-time
 app.post("/api/shopping/update", (req, res) => {
   const { id, name, quantity, unit, price, category } = req.body;
   if (!id) {
     return res.status(400).json({ error: "Item ID is required" });
   }
+
   const store = db.getStore();
-  const item = store.shopping.find((i) => i.id === id);
+  const item = store.shopping.find(i => i.id === id);
   if (!item) {
     return res.status(404).json({ error: "Item not found" });
   }
-  if (name !== void 0) item.name = name;
-  if (quantity !== void 0) item.quantity = parseFloat(quantity) || 0;
-  if (unit !== void 0) item.unit = unit;
-  if (price !== void 0) item.price = price !== null && price !== "" ? parseFloat(price) : void 0;
-  if (category !== void 0) item.category = category;
+
+  if (name !== undefined) item.name = name;
+  if (quantity !== undefined) item.quantity = parseFloat(quantity) || 0;
+  if (unit !== undefined) item.unit = unit;
+  if (price !== undefined) item.price = price !== null && price !== "" ? parseFloat(price) : undefined;
+  if (category !== undefined) item.category = category;
+
   db.saveStore();
   res.json({ success: true, item, shopping: store.shopping });
 });
+
+// Finalize a monthly list and log into expenses
 app.post("/api/shopping/finalize", (req, res) => {
   const { monthId, paymentMethod, totalSpent, paid_by_id, carryOver } = req.body;
   if (!monthId) {
     return res.status(400).json({ error: "monthId is required" });
   }
+
   const store = db.getStore();
+  
+  // Find all items for this month (handling defaults)
   const currentMonthId = monthId;
   const nextMonthId = (() => {
     const [y, m] = currentMonthId.split("-").map(Number);
@@ -1166,95 +966,125 @@ app.post("/api/shopping/finalize", (req, res) => {
     }
     return `${nextY}-${String(nextM).padStart(2, "0")}`;
   })();
+
   const monthItems = store.shopping.filter(
-    (i) => i.monthId === currentMonthId || !i.monthId && currentMonthId === "2026-05"
+    i => (i.monthId === currentMonthId || (!i.monthId && currentMonthId === "2026-05"))
   );
+
   if (monthItems.length === 0) {
     return res.status(400).json({ error: "Nenhum item nesta lista para finalizar." });
   }
-  const actualSpent = totalSpent !== void 0 ? parseFloat(totalSpent) : 0;
-  const estimatedTotal = monthItems.filter((i) => i.is_bought).reduce((acc, i) => acc + (i.price || 0) * i.quantity, 0);
+
+  const actualSpent = totalSpent !== undefined ? parseFloat(totalSpent) : 0;
+  
+  // Calculate estimated total based on items checked/bought this month
+  const estimatedTotal = monthItems
+    .filter(i => i.is_bought)
+    .reduce((acc, i) => acc + ((i.price || 0) * i.quantity), 0);
+
   const difference = estimatedTotal - actualSpent;
+
+  // Store detailed finalization record in a custom array on couple
   if (!store.couple.shoppingFinalizations) {
-    store.couple.shoppingFinalizations = [];
+    (store.couple as any).shoppingFinalizations = [];
   }
-  store.couple.shoppingFinalizations.push({
+  
+  (store.couple as any).shoppingFinalizations.push({
     id: "fin_" + Date.now(),
     monthId: currentMonthId,
     estimatedTotal,
     realTotal: actualSpent,
     difference,
-    paymentMethod: paymentMethod || "N\xE3o Informado",
+    paymentMethod: paymentMethod || "Não Informado",
     paidBy: paid_by_id || "Leandro",
-    date: (/* @__PURE__ */ new Date()).toISOString()
+    date: new Date().toISOString()
   });
+
+  // Process items
   for (const item of monthItems) {
     if (item.is_bought) {
       item.listStatus = "finalized";
-      item.paymentMethod = paymentMethod || "N\xE3o Informado";
+      item.paymentMethod = paymentMethod || "Não Informado";
     } else if (carryOver) {
+      // Carry over unchecked items to the next month!
       item.monthId = nextMonthId;
       item.listStatus = "active";
     } else {
+      // Keep in current month but archived/finalized status
       item.listStatus = "finalized";
     }
   }
-  const helperFormatMonth = (ym) => {
-    const months = ["Janeiro", "Fevereiro", "Mar\xE7o", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+  // Create financial integration expense
+  const helperFormatMonth = (ym: string) => {
+    const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
     const parts = ym.split("-");
     const y = parts[0];
     const m = parseInt(parts[1], 10);
     if (isNaN(m) || m < 1 || m > 12) return ym;
     return `${months[m - 1]}/${y}`;
   };
+
   const readableMonth = helperFormatMonth(monthId);
-  const mapPaymentMethod = (method) => {
+
+  const mapPaymentMethod = (method: string): any => {
     if (!method) return "Outro";
     const lower = method.toLowerCase();
-    if (lower === "d\xE9bito" || lower === "debito") return "D\xE9bito";
-    if (lower === "cr\xE9dito" || lower === "credito") return "Cr\xE9dito";
+    if (lower === "débito" || lower === "debito") return "Débito";
+    if (lower === "crédito" || lower === "credito") return "Crédito";
     if (lower === "pix") return "Pix";
     if (lower === "dinheiro") return "Dinheiro";
     if (lower === "carteira digital" || lower === "vr" || lower === "carteira") return "Carteira digital";
     return "Outro";
   };
-  const newExpense = {
+
+  const newExpense: Expense = {
     id: "exp_shop_final_" + Date.now(),
     value: actualSpent,
     currency: "R$",
-    description: `Lista de Compras de ${readableMonth} - M\xE9todo: ${paymentMethod || "N\xE3o Informado"}`,
+    description: `Lista de Compras de ${readableMonth} - Método: ${paymentMethod || "Não Informado"}`,
     paid_by_id: paid_by_id || "Leandro",
     split_type: "50/50",
-    category: "Alimenta\xE7\xE3o" /* ALIMENTACAO */,
-    date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+    category: ExpenseCategory.ALIMENTACAO,
+    date: new Date().toISOString().split("T")[0],
     is_recurring: false,
     payment_method: mapPaymentMethod(paymentMethod)
   };
+
   store.expenses.push(newExpense);
+
   logActivity(
     store,
     "shopping_finalized",
-    `\u2705 Lista de ${readableMonth} finalizada por ${paid_by_id}! R$ ${actualSpent.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} pagos via ${paymentMethod || "N\xE3o Informado"} lan\xE7ados automaticamente nas finan\xE7as.`
+    `✅ Lista de ${readableMonth} finalizada por ${paid_by_id}! R$ ${actualSpent.toLocaleString("pt-BR", {minimumFractionDigits: 2})} pagos via ${paymentMethod || "Não Informado"} lançados automaticamente nas finanças.`
   );
+
   db.saveStore();
-  res.json({ success: true, expenses: store.expenses, shopping: store.shopping, shoppingFinalizations: store.couple.shoppingFinalizations });
+  res.json({ success: true, expenses: store.expenses, shopping: store.shopping, shoppingFinalizations: (store.couple as any).shoppingFinalizations });
 });
+
+// ================= HOUSE INVENTORY MODULE =================
+
+// Add or edit stock manually (removed auto check-off triggers)
 app.post("/api/inventory/update", (req, res) => {
   const { id, name, quantity, min_quantity, unit } = req.body;
   const store = db.getStore();
-  const checkAndAddToShopping = (item) => {
+  
+  const checkAndAddToShopping = (item: any) => {
     if (item.quantity < item.min_quantity) {
-      const today = /* @__PURE__ */ new Date();
+      const today = new Date();
       const currentMonthId = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
       const lowercaseName = item.name.trim().toLowerCase();
       const exists = store.shopping.find(
-        (s) => !s.is_bought && s.monthId === currentMonthId && s.name.trim().toLowerCase() === lowercaseName
+        (s: any) => !s.is_bought && 
+             (s.monthId === currentMonthId) && 
+             s.name.trim().toLowerCase() === lowercaseName
       );
       if (!exists) {
         const newShopItem = {
           id: "shop_inv_" + Date.now(),
           name: item.name,
-          category: "Outros" /* OUTROS */,
+          category: ShoppingCategory.OUTROS,
           quantity: Math.max(1, Math.ceil(item.min_quantity - item.quantity)),
           unit: item.unit,
           price: 0,
@@ -1263,17 +1093,19 @@ app.post("/api/inventory/update", (req, res) => {
           monthId: currentMonthId,
           coupleId: item.coupleId
         };
-        store.shopping.push(newShopItem);
-        logActivity(store, "inventory_low", `Estoque baixo: '${item.name}' caiu para ${item.quantity} ${item.unit}. Item inserido no carrinho! \u{1F6D2}`);
+        store.shopping.push(newShopItem as any);
+        logActivity(store, "inventory_low", `Estoque baixo: '${item.name}' caiu para ${item.quantity} ${item.unit}. Item inserido no carrinho! 🛒`);
       }
     }
   };
+
   if (id) {
-    const item = store.inventory.find((i) => i.id === id);
+    const item = store.inventory.find(i => i.id === id);
     if (item) {
       item.quantity = parseFloat(quantity);
-      if (min_quantity !== void 0) item.min_quantity = parseFloat(min_quantity);
+      if (min_quantity !== undefined) item.min_quantity = parseFloat(min_quantity);
       if (unit) item.unit = unit;
+      
       checkAndAddToShopping(item);
       db.saveStore();
       return res.json({ success: true, item, shopping: store.shopping });
@@ -1287,55 +1119,74 @@ app.post("/api/inventory/update", (req, res) => {
       min_quantity: parseFloat(min_quantity) || 1
     };
     store.inventory.push(newItem);
+    
     checkAndAddToShopping(newItem);
     db.saveStore();
     return res.json({ success: true, item: newItem, shopping: store.shopping });
   }
   res.status(400).json({ error: "Invalid action" });
 });
+
+// ================= QUICK NOTES / ANOTAÇÕES RÁPIDAS (COISAS QUE ACABAM DO NADA) =================
+
 app.post("/api/quick-notes/create", (req, res) => {
   const { text, authorId } = req.body;
+  
   if (!text || !authorId) {
     return res.status(400).json({ error: "Required fields missing" });
   }
+  
   const store = db.getStore();
   if (!store.quickNotes) {
     store.quickNotes = [];
   }
+  
   const newNote = {
     id: "note_" + Date.now(),
     text,
     authorId,
-    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    createdAt: new Date().toISOString()
   };
+  
   store.quickNotes.push(newNote);
   db.saveStore();
-  logActivity(store, "note", `\u{1F4DD} ${authorId} adicionou nota r\xE1pida: "${text}"`);
+  
+  logActivity(store, "note", `📝 ${authorId} adicionou nota rápida: "${text}"`);
+  
   res.json({ success: true, note: newNote, quickNotes: store.quickNotes });
 });
+
 app.post("/api/quick-notes/delete", (req, res) => {
   const { id } = req.body;
+  
   if (!id) {
     return res.status(400).json({ error: "Required fields missing" });
   }
+  
   const store = db.getStore();
   if (!store.quickNotes) {
     store.quickNotes = [];
   }
-  store.quickNotes = store.quickNotes.filter((n) => n.id !== id);
+  
+  store.quickNotes = store.quickNotes.filter(n => n.id !== id);
   db.saveStore();
+  
   res.json({ success: true, quickNotes: store.quickNotes });
 });
+
+// ================= FINANÇAS COMPARTILHADAS =================
+
+// Create expense
 app.post("/api/expenses/create", (req, res) => {
-  const {
-    value,
-    currency,
-    description,
-    paid_by_id,
-    split_type,
-    custom_percent,
-    category,
-    date,
+  const { 
+    value, 
+    currency, 
+    description, 
+    paid_by_id, 
+    split_type, 
+    custom_percent, 
+    category, 
+    date, 
     is_recurring,
     payment_method,
     card_name,
@@ -1343,42 +1194,48 @@ app.post("/api/expenses/create", (req, res) => {
     installments_current,
     monthly_installment_value
   } = req.body;
+  
   if (!value || !description || !paid_by_id) {
     return res.status(400).json({ error: "Required fields missing" });
   }
+
   const store = db.getStore();
-  const newExpense = {
+  const newExpense: Expense = {
     id: "exp_" + Date.now(),
     value: parseFloat(value),
     currency: currency || "R$",
     description: description.slice(0, 100),
     paid_by_id,
     split_type: split_type || "50/50",
-    custom_percent: custom_percent ? parseFloat(custom_percent) : void 0,
-    category: category || "Outros" /* OUTROS */,
-    date: date || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+    custom_percent: custom_percent ? parseFloat(custom_percent) : undefined,
+    category: category || ExpenseCategory.OUTROS,
+    date: date || new Date().toISOString().split("T")[0],
     is_recurring: !!is_recurring,
-    payment_method: payment_method || void 0,
-    card_name: card_name || void 0,
-    installments_total: installments_total ? parseInt(installments_total, 10) : void 0,
-    installments_current: installments_current ? parseInt(installments_current, 10) : void 0,
-    monthly_installment_value: monthly_installment_value ? parseFloat(monthly_installment_value) : void 0
+    payment_method: payment_method || undefined,
+    card_name: card_name || undefined,
+    installments_total: installments_total ? parseInt(installments_total, 10) : undefined,
+    installments_current: installments_current ? parseInt(installments_current, 10) : undefined,
+    monthly_installment_value: monthly_installment_value ? parseFloat(monthly_installment_value) : undefined
   };
+
   store.expenses.push(newExpense);
   db.saveStore();
   res.json({ success: true, expense: newExpense });
 });
+
+// Delete expense (soft delete)
 app.post("/api/expenses/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
-  store.expenses = store.expenses.filter((e) => e.id !== id);
+  store.expenses = store.expenses.filter(e => e.id !== id);
   db.saveStore();
   res.json({ success: true });
 });
+
 app.post("/api/expenses/toggle-paid", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
-  const expense = store.expenses.find((e) => e.id === id);
+  const expense = store.expenses.find(e => e.id === id);
   if (!expense) {
     return res.status(404).json({ error: "Expense not found" });
   }
@@ -1386,46 +1243,51 @@ app.post("/api/expenses/toggle-paid", (req, res) => {
   db.saveStore();
   res.json({ success: true, expense });
 });
+
+// Dynamic Rewards Enpoints
 app.post("/api/rewards/create", (req, res) => {
   const { title, cost, desc, emoji } = req.body;
   if (!title || !cost) {
     return res.status(400).json({ error: "Required fields missing" });
   }
   const store = db.getStore();
-  const newReward = {
+  const newReward: Reward = {
     id: "reward_" + Date.now(),
     title,
     cost: parseInt(cost),
     desc: desc || "",
-    emoji: emoji || "\u{1F381}"
+    emoji: emoji || "🎁"
   };
   if (!store.rewards) store.rewards = [];
   store.rewards.push(newReward);
   db.saveStore();
   res.json({ success: true, reward: newReward });
 });
+
 app.post("/api/rewards/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   if (!store.rewards) store.rewards = [];
-  store.rewards = store.rewards.filter((r) => r.id !== id);
+  store.rewards = store.rewards.filter(r => r.id !== id);
   db.saveStore();
   res.json({ success: true });
 });
+
+// Dynamic Quests / Missões Endpoints
 app.post("/api/quests/create", (req, res) => {
   const { title, description, points, type, target_count } = req.body;
   if (!title || !points) {
     return res.status(400).json({ error: "Required fields missing" });
   }
   const store = db.getStore();
-  const newQuest = {
+  const newQuest: Quest = {
     id: "quest_" + Date.now(),
     title,
     description: description || "",
     points: parseInt(points) || 10,
     type: type || "Custom",
-    target_count: target_count ? parseInt(target_count) : void 0,
-    current_count: target_count ? 0 : void 0,
+    target_count: target_count ? parseInt(target_count) : undefined,
+    current_count: target_count ? 0 : undefined,
     completed: false
   };
   if (!store.quests) store.quests = [];
@@ -1433,22 +1295,25 @@ app.post("/api/quests/create", (req, res) => {
   db.saveStore();
   res.json({ success: true, quest: newQuest });
 });
+
 app.post("/api/quests/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   if (!store.quests) store.quests = [];
-  store.quests = store.quests.filter((q) => q.id !== id);
+  store.quests = store.quests.filter(q => q.id !== id);
   db.saveStore();
   res.json({ success: true });
 });
+
 app.post("/api/quests/toggle-complete", (req, res) => {
   const { id, user_id } = req.body;
   const store = db.getStore();
   if (!store.quests) store.quests = [];
-  const quest = store.quests.find((q) => q.id === id);
+  const quest = store.quests.find(q => q.id === id);
   if (!quest) {
     return res.status(404).json({ error: "Quest not found" });
   }
+  
   quest.completed = !quest.completed;
   if (quest.completed) {
     store.couple.total_points += quest.points;
@@ -1461,16 +1326,21 @@ app.post("/api/quests/toggle-complete", (req, res) => {
       store.users[user_id].points_weekly = Math.max(0, store.users[user_id].points_weekly - quest.points);
     }
   }
+
   db.saveStore();
   res.json({ success: true, quest, couple: store.couple, users: store.users });
 });
+
+// ================= CALENDÁRIO DO CASAL =================
+
 app.post("/api/events/create", (req, res) => {
   const { title, description, type, start_time, end_time, location, travel_checklist, booking_link, responsible_id } = req.body;
   if (!title || !start_time || !type) {
     return res.status(400).json({ error: "Missing required fields for event" });
   }
+
   const store = db.getStore();
-  const newEvent = {
+  const newEvent: Event = {
     id: "event_" + Date.now(),
     title,
     description,
@@ -1478,23 +1348,28 @@ app.post("/api/events/create", (req, res) => {
     start_time,
     end_time,
     location,
-    travel_checklist: travel_checklist || (type === "Viagem" /* VIAGEM */ ? [] : void 0),
+    travel_checklist: travel_checklist || (type === EventType.VIAGEM ? [] : undefined),
     booking_link,
     responsible_id: responsible_id || "Ambos",
     comments: []
   };
+
   store.events.push(newEvent);
   db.saveStore();
   res.json({ success: true, event: newEvent });
 });
+
+// Toggle travel checklist items
 app.post("/api/events/checklist/toggle", (req, res) => {
   const { event_id, item_text } = req.body;
   const store = db.getStore();
-  const event = store.events.find((e) => e.id === event_id);
+  const event = store.events.find(e => e.id === event_id);
+  
   if (!event || !event.travel_checklist) {
     return res.status(404).json({ error: "Event or travel checklist not found" });
   }
-  const checkItem = event.travel_checklist.find((i) => i.item === item_text);
+
+  const checkItem = event.travel_checklist.find(i => i.item === item_text);
   if (checkItem) {
     checkItem.checked = !checkItem.checked;
     db.saveStore();
@@ -1503,49 +1378,66 @@ app.post("/api/events/checklist/toggle", (req, res) => {
     res.status(404).json({ error: "Checklist item not found" });
   }
 });
+
+// Add items to checklist item
 app.post("/api/events/checklist/add", (req, res) => {
   const { event_id, item_text } = req.body;
   const store = db.getStore();
-  const event = store.events.find((e) => e.id === event_id);
+  const event = store.events.find(e => e.id === event_id);
+  
   if (!event) {
     return res.status(404).json({ error: "Event not found" });
   }
+
   if (!event.travel_checklist) {
     event.travel_checklist = [];
   }
+
   event.travel_checklist.push({ item: item_text, checked: false });
   db.saveStore();
   res.json({ success: true, event });
 });
+
+// ================= MEMÓRIAS & ÁLBUM =================
+
 app.post("/api/memories/create", (req, res) => {
   const { url, description, date, location, album_name, is_capsule, capsule_unlock_date } = req.body;
   if (!url || !description) {
     return res.status(400).json({ error: "Photo URL and description are required" });
   }
+
   const store = db.getStore();
-  const newMemory = {
+  const newMemory: Memory = {
     id: "mem_" + Date.now(),
     url,
     description,
-    date: date || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+    date: date || new Date().toISOString().split("T")[0],
     location,
     album_name: album_name || "Geral",
     is_capsule: !!is_capsule,
-    capsule_unlock_date: capsule_unlock_date || void 0,
-    created_at: (/* @__PURE__ */ new Date()).toISOString()
+    capsule_unlock_date: capsule_unlock_date || undefined,
+    created_at: new Date().toISOString()
   };
+
   store.memories.push(newMemory);
   db.saveStore();
   res.json({ success: true, memory: newMemory });
 });
+
+// ================= HUMOR & CHECK-IN EMOCIONAL =================
+
 app.post("/api/moods/checkin", (req, res) => {
   const { user_id, mood, note, share_note } = req.body;
   if (!user_id || !mood) {
     return res.status(400).json({ error: "User ID and mood are required" });
   }
+
   const store = db.getStore();
-  const todayStr = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-  let checkin = store.moods.find((m) => m.user_id === user_id && m.date === todayStr);
+  const todayStr = new Date().toISOString().split("T")[0];
+  
+  // Find today's checkin for this user to update or append
+  let checkin = store.moods.find(m => m.user_id === user_id && m.date === todayStr);
+  
   if (checkin) {
     checkin.mood = mood;
     checkin.note = note || "";
@@ -1561,92 +1453,117 @@ app.post("/api/moods/checkin", (req, res) => {
     };
     store.moods.push(checkin);
   }
-  logActivity(store, "mood", `\u2728 Sintonia do Amor: ${user_id} atualizou o humor para '${mood}'${note ? `: "${note}"` : ""}`);
+
+  logActivity(store, "mood", `✨ Sintonia do Amor: ${user_id} atualizou o humor para '${mood}'${note ? `: "${note}"` : ""}`);
+
   db.saveStore();
   res.json({ success: true, checkin });
 });
+
+
+// ================= WISHLIST MODULE =================
+
 app.post("/api/wishlist/create", (req, res) => {
   const { name, link, estimated_price, priority, is_private_to_partner, category, saving_goal, added_by } = req.body;
   if (!name || !category) {
     return res.status(400).json({ error: "Name and category are required" });
   }
+
   const store = db.getStore();
-  const newItem = {
+  const newItem: WishlistItem = {
     id: "wish_" + Date.now(),
     name,
     link,
-    estimated_price: estimated_price ? parseFloat(estimated_price) : void 0,
-    priority: priority || "M\xE9dia",
+    estimated_price: estimated_price ? parseFloat(estimated_price) : undefined,
+    priority: priority || "Média",
     is_private_to_partner: !!is_private_to_partner,
     category,
-    saving_goal: saving_goal ? parseFloat(saving_goal) : void 0,
-    saving_saved: saving_goal ? 0 : void 0,
+    saving_goal: saving_goal ? parseFloat(saving_goal) : undefined,
+    saving_saved: saving_goal ? 0 : undefined,
     added_by: added_by || "Ambos"
   };
+
   store.wishlist.push(newItem);
   db.saveStore();
   res.json({ success: true, item: newItem });
 });
+
+// Contribute saving to cofrinho
 app.post("/api/wishlist/save", (req, res) => {
   const { id, amount } = req.body;
   const store = db.getStore();
-  const item = store.wishlist.find((w) => w.id === id);
-  if (!item || item.saving_goal === void 0) {
+  const item = store.wishlist.find(w => w.id === id);
+  if (!item || item.saving_goal === undefined) {
     return res.status(404).json({ error: "Wishlist cofrinho not found" });
   }
+
   const current = item.saving_saved || 0;
   item.saving_saved = Math.min(item.saving_goal, current + parseFloat(amount));
   db.saveStore();
   res.json({ success: true, item });
 });
+
+// ================= RECEITAS & CARDÁPIO SEMANAL =================
+
 app.post("/api/recipes/create", (req, res) => {
   const { title, ingredients, instructions, duration, portions, couple_rating, tags, url } = req.body;
   if (!title) {
     return res.status(400).json({ error: "Recipe title is required" });
   }
+
   const store = db.getStore();
-  const newRecipe = {
+  const newRecipe: Recipe = {
     id: "rec_" + Date.now(),
     title,
     ingredients: Array.isArray(ingredients) ? ingredients : [ingredients],
     instructions: instructions || "",
     duration: duration ? parseInt(duration, 10) : 30,
     portions: portions ? parseInt(portions, 10) : 2,
-    couple_rating: couple_rating || void 0,
+    couple_rating: couple_rating || undefined,
     tags: tags || [],
     photo_url: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=300"
   };
+
   store.recipes.push(newRecipe);
   db.saveStore();
   res.json({ success: true, recipe: newRecipe });
 });
+
+// Import Recipe simulation (via URL context)
 app.post("/api/recipes/import-url", (req, res) => {
   const { url } = req.body;
   if (!url) {
     return res.status(400).json({ error: "URL is required" });
   }
+
+  // Simulated scraped data based on some URLs or fallback
   const store = db.getStore();
-  const scrapeTitle = url.includes("panelinha") ? "Risoto de Ab\xF3bora Panelinha" : "Bolo Formiga Especial";
-  const ingreds = url.includes("panelinha") ? ["Ab\xF3bora caboti\xE1 picada - 400g", "Arroz arb\xF3reo - 1.5 x\xEDcaras", "Parmes\xE3o ralado - 80g", "Cebola ralada", "Vinho branco seco - 100ml"] : ["Farinha de trigo - 2 x\xEDcaras", "Granulado de chocolate - 100g", "Ovos grandes - 3 unidades", "Manteiga amolecida - 100g", "Leite morno"];
-  const newRecipe = {
+  const scrapeTitle = url.includes("panelinha") ? "Risoto de Abóbora Panelinha" : "Bolo Formiga Especial";
+  const ingreds = url.includes("panelinha") 
+    ? ["Abóbora cabotiá picada - 400g", "Arroz arbóreo - 1.5 xícaras", "Parmesão ralado - 80g", "Cebola ralada", "Vinho branco seco - 100ml"]
+    : ["Farinha de trigo - 2 xícaras", "Granulado de chocolate - 100g", "Ovos grandes - 3 unidades", "Manteiga amolecida - 100g", "Leite morno"];
+
+  const newRecipe: Recipe = {
     id: "rec_scraped_" + Date.now(),
     title: scrapeTitle,
     ingredients: ingreds,
-    instructions: "1. Prepare o batedor ou panela conforme as instru\xE7\xF5es tradicionais.\n2. Incorpore os ingredientes em fogo brando.\n3. Misture devagar e sirva em por\xE7\xF5es generosas para o casal adorar.",
+    instructions: "1. Prepare o batedor ou panela conforme as instruções tradicionais.\n2. Incorpore os ingredientes em fogo brando.\n3. Misture devagar e sirva em porções generosas para o casal adorar.",
     duration: 35,
     portions: 4,
     couple_rating: "Favorita",
-    tags: ["r\xE1pida", "econ\xF4mica"],
+    tags: ["rápida", "econômica"],
     photo_url: "https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?auto=format&fit=crop&q=80&w=300"
   };
+
   store.recipes.push(newRecipe);
   db.saveStore();
   res.json({ success: true, recipe: newRecipe });
 });
+
 app.post("/api/recipes/rate", (req, res) => {
-  const { id, rating } = req.body;
+  const { id, rating } = req.body; // "Gostamos" | "Não repetir" | "Favorita"
   const store = db.getStore();
-  const recipe = store.recipes.find((r) => r.id === id);
+  const recipe = store.recipes.find(r => r.id === id);
   if (recipe) {
     recipe.couple_rating = rating;
     db.saveStore();
@@ -1655,312 +1572,384 @@ app.post("/api/recipes/rate", (req, res) => {
     res.status(404).json({ error: "Recipe not found" });
   }
 });
+
+// Generate grocery list automatically from recipe items
 app.post("/api/recipes/generate-shopping", (req, res) => {
   const { recipe_id, user_id } = req.body;
   const store = db.getStore();
-  const recipe = store.recipes.find((r) => r.id === recipe_id);
+  const recipe = store.recipes.find(r => r.id === recipe_id);
   if (!recipe) {
     return res.status(404).json({ error: "Recipe not found" });
   }
-  const addedItems = [];
-  recipe.ingredients.forEach((rawIng) => {
+
+  const addedItems: string[] = [];
+  recipe.ingredients.forEach(rawIng => {
+    // split amount
     const cleanName = rawIng.includes("-") ? rawIng.split("-")[0].trim() : rawIng.trim();
-    const exists = store.shopping.some((s) => !s.is_bought && s.name.toLowerCase() === cleanName.toLowerCase());
+    
+    // check redundancy
+    const exists = store.shopping.some(s => !s.is_bought && s.name.toLowerCase() === cleanName.toLowerCase());
     if (!exists) {
       store.shopping.push({
         id: "shop_rec_" + Date.now() + Math.random().toString(36).substring(3, 8),
         name: cleanName,
-        category: "Outros" /* OUTROS */,
+        category: ShoppingCategory.OUTROS,
         quantity: 1,
-        unit: "por\xE7\xE3o",
+        unit: "porção",
         is_bought: false,
         added_by: user_id || "Receitas"
       });
       addedItems.push(cleanName);
     }
   });
+
   db.saveStore();
   res.json({ success: true, added: addedItems, shopping: store.shopping });
 });
+
+// Update weekly plan slot
 app.post("/api/mealplan/update", (req, res) => {
   const { day, meal_type, recipe_id, custom_text } = req.body;
   const store = db.getStore();
+  
   const slotId = `${day}-${meal_type}`;
-  let slot = store.mealPlan.find((m) => m.id === slotId);
+  let slot = store.mealPlan.find(m => m.id === slotId);
+  
   if (slot) {
-    slot.recipe_id = recipe_id || void 0;
-    slot.custom_text = custom_text || void 0;
+    slot.recipe_id = recipe_id || undefined;
+    slot.custom_text = custom_text || undefined;
   } else {
     slot = {
       id: slotId,
       day,
       meal_type,
-      recipe_id: recipe_id || void 0,
-      custom_text: custom_text || void 0
+      recipe_id: recipe_id || undefined,
+      custom_text: custom_text || undefined
     };
     store.mealPlan.push(slot);
   }
+
   db.saveStore();
   res.json({ success: true, slot });
 });
+
+
+// ================= CHAT CONTEXTUAL =================
+
+// Add quick contextual comments on any list shop item, calendar event or task
 app.post("/api/chat/comment", (req, res) => {
-  const { scope_type, scope_id, text, sender_id } = req.body;
+  const { scope_type, scope_id, text, sender_id } = req.body; // scope_type: task, event, shop
   const store = db.getStore();
+  
   const comment = {
     id: "c_" + Date.now(),
     author_id: sender_id || "Leandro",
     text: text || "",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    timestamp: new Date().toISOString()
   };
+
   if (scope_type === "task") {
-    const task = store.tasks.find((t) => t.id === scope_id);
+    const task = store.tasks.find(t => t.id === scope_id);
     if (task) task.comments.push(comment);
   } else if (scope_type === "event") {
-    const event = store.events.find((e) => e.id === scope_id);
+    const event = store.events.find(e => e.id === scope_id);
     if (event) event.comments.push(comment);
   } else if (scope_type === "shop") {
+    // we can record it as custom log or directly
   }
+
   db.saveStore();
   res.json({ success: true, comment });
 });
+
+
+// ================= GEMINI AFFECTIVE IA =================
+
+// Endpoint for smart emotional coaching and housekeeping tips
 app.post("/api/gemini/insights", (req, res) => {
   const { coupleId } = getRequestCredentials(req);
   const client = getAiClient();
   const store = db.getStore();
   const { couple, users } = getCoupleAndUsers(store, coupleId);
+  
   const p1Name = users.Leandro?.name || "Leandro";
   const p2Name = users.Kaisa?.name || "Kaisa";
-  const incompleteTasks = (store.tasks || []).filter((t) => t.coupleId === coupleId && !t.completed).map((t) => `${t.title} (${t.responsible_id})`).join(", ");
-  const recentMoods = (store.moods || []).filter((m) => m.coupleId === coupleId).slice(-6).map((m) => `${m.user_id}: ${m.mood} (${m.note || "Sem nota"})`).join(", ");
-  const coupleStats = `N\xEDvel do Lar: ${couple.home_level}, Total Pontos: ${couple.total_points}. Pontos ${p1Name}: ${users.Leandro?.points_weekly || 0}, Pontos ${p2Name}: ${users.Kaisa?.points_weekly || 0}`;
-  const prompt = `Atue como o assistente emocional "IA Afetiva" do aplicativo de casal N\xF3sDois.
-  Analise os dados atuais do lar e d\xEA um feedback carinhoso, emp\xE1tico e sutil de at\xE9 3 frases em Portugu\xEAs do Brasil para apoiar o casal (${p1Name} e ${p2Name}).
+
+  const incompleteTasks = (store.tasks || []).filter((t: any) => t.coupleId === coupleId && !t.completed).map((t: any) => `${t.title} (${t.responsible_id})`).join(", ");
+  const recentMoods = (store.moods || []).filter((m: any) => m.coupleId === coupleId).slice(-6).map((m: any) => `${m.user_id}: ${m.mood} (${m.note || "Sem nota"})`).join(", ");
+  const coupleStats = `Nível do Lar: ${couple.home_level}, Total Pontos: ${couple.total_points}. Pontos ${p1Name}: ${users.Leandro?.points_weekly || 0}, Pontos ${p2Name}: ${users.Kaisa?.points_weekly || 0}`;
+
+  const prompt = `Atue como o assistente emocional "IA Afetiva" do aplicativo de casal NósDois.
+  Analise os dados atuais do lar e dê um feedback carinhoso, empático e sutil de até 3 frases em Português do Brasil para apoiar o casal (${p1Name} e ${p2Name}).
   
   Dados Atuais:
-  - Estat\xEDsticas: ${coupleStats}
-  - Tarefas pendentes: ${incompleteTasks || "Nenhuma! Incr\xEDvel."}
+  - Estatísticas: ${coupleStats}
+  - Tarefas pendentes: ${incompleteTasks || "Nenhuma! Incrível."}
   - Humores recentes: ${recentMoods || "Ainda sem check-ins hoje."}
   
   Importante:
-  - Seja caloroso, rom\xE2ntico e apoiador.
-  - Fa\xE7a coment\xE1rios que gerem uni\xE3o, reduzam o estresse Invis\xEDvel da rotina, ou sugiram carinho m\xFAtuo.
+  - Seja caloroso, romântico e apoiador.
+  - Faça comentários que gerem união, reduzam o estresse Invisível da rotina, ou sugiram carinho mútuo.
   - Se os dois estiverem cansados, ative conselhos reconfortantes (modo acolhedor).
-  - Use o nome de ambos ${p1Name} e ${p2Name} de forma carinhosa ou seus apelidos ("Moz\xE3o" e "Meu Amor").
-  - Retorne um par\xE1grafo conciso em formato de texto simples. Sem jarg\xF5es t\xE9cnicos.`;
+  - Use o nome de ambos ${p1Name} e ${p2Name} de forma carinhosa ou seus apelidos ("Mozão" e "Meu Amor").
+  - Retorne um parágrafo conciso em formato de texto simples. Sem jargões técnicos.`;
+
   if (!client) {
+    // Fallback if API key is not configured or mock
     const fallbackAnswers = [
-      `${p1Name} e ${p2Name}, voc\xEAs est\xE3o indo muito bem nesta semana! Que tal prepararem uma das suas receitas favoritas hoje e relaxarem juntinhos no sof\xE1? Um abra\xE7o forte cuida de qualquer cansa\xE7o. \u{1F49C}`,
-      `Percebi que a rotina est\xE1 um pouco cheia hoje. Meu Amor ${p1Name} e Moz\xE3o ${p2Name}, lembrem-se de respirar fundo e dividir o peso das tarefas. Uma noite tranquila com fondue pode ser maravilhoso para voc\xEAs!`,
-      `Parab\xE9ns pelo progresso no N\xEDvel do Lar! Cada pequena tarefa conclu\xEDda \xE9 um carinho com o outro. Aproveitem a noite de hoje livre de lou\xE7as para assistirem algo engra\xE7ado juntos.`
+      `${p1Name} e ${p2Name}, vocês estão indo muito bem nesta semana! Que tal prepararem uma das suas receitas favoritas hoje e relaxarem juntinhos no sofá? Um abraço forte cuida de qualquer cansaço. 💜`,
+      `Percebi que a rotina está um pouco cheia hoje. Meu Amor ${p1Name} e Mozão ${p2Name}, lembrem-se de respirar fundo e dividir o peso das tarefas. Uma noite tranquila com fondue pode ser maravilhoso para vocês!`,
+      `Parabéns pelo progresso no Nível do Lar! Cada pequena tarefa concluída é um carinho com o outro. Aproveitem a noite de hoje livre de louças para assistirem algo engraçado juntos.`
     ];
     return res.json({ insight: fallbackAnswers[Math.floor(Math.random() * fallbackAnswers.length)] });
   }
+
   client.models.generateContent({
     model: "gemini-3.5-flash",
-    contents: prompt
-  }).then((response) => {
+    contents: prompt,
+  }).then(response => {
     res.json({ insight: response.text });
-  }).catch((err) => {
+  }).catch(err => {
     console.error("Gemini Insight Call failed:", err);
-    res.json({
-      insight: `${p1Name} e ${p2Name}, lembrem-se de respirar fundo e dividir o peso das tarefas cotidianas. Voc\xEAs s\xE3o uma \xF3tima dupla! Que tal uma noite de cafun\xE9 e descanso? \u{1F49C}`
+    res.json({ 
+      insight: `${p1Name} e ${p2Name}, lembrem-se de respirar fundo e dividir o peso das tarefas cotidianas. Vocês são uma ótima dupla! Que tal uma noite de cafuné e descanso? 💜` 
     });
   });
 });
+
+
+// ================= EDITING & DELETION ENDPOINTS =================
+
+// Tasks
 app.post("/api/tasks/update", (req, res) => {
   const { id, title, description, responsible_id, due_date, recurrence, category, priority, time_estimate } = req.body;
   const store = db.getStore();
-  const task = store.tasks.find((t) => t.id === id);
+  const task = store.tasks.find(t => t.id === id);
   if (!task) {
     return res.status(404).json({ error: "Task not found" });
   }
   if (title) task.title = title.slice(0, 80);
-  if (description !== void 0) task.description = description.slice(0, 500);
+  if (description !== undefined) task.description = description.slice(0, 500);
   if (responsible_id) task.responsible_id = responsible_id;
-  if (due_date !== void 0) task.due_date = due_date || void 0;
+  if (due_date !== undefined) task.due_date = due_date || undefined;
   if (recurrence) task.recurrence = recurrence;
   if (category) task.category = category;
   if (priority) {
     task.priority = priority;
-    task.points = priority === "Urgente" /* URGENTE */ ? 25 : 10;
+    task.points = priority === TaskPriority.URGENTE ? 25 : 10;
   }
-  if (time_estimate !== void 0) task.time_estimate = time_estimate ? parseInt(time_estimate, 10) : void 0;
+  if (time_estimate !== undefined) task.time_estimate = time_estimate ? parseInt(time_estimate, 10) : undefined;
+
   db.saveStore();
   res.json({ success: true, task });
 });
+
 app.post("/api/tasks/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   const initialLen = store.tasks.length;
-  store.tasks = store.tasks.filter((t) => t.id !== id);
+  store.tasks = store.tasks.filter(t => t.id !== id);
   db.saveStore();
   res.json({ success: true, count: initialLen - store.tasks.length });
 });
+
+// Events
 app.post("/api/events/update", (req, res) => {
   const { id, title, description, type, start_time, end_time, location, booking_link, responsible_id } = req.body;
   const store = db.getStore();
-  const event = store.events.find((e) => e.id === id);
+  const event = store.events.find(e => e.id === id);
   if (!event) {
     return res.status(404).json({ error: "Event not found" });
   }
   if (title) event.title = title;
-  if (description !== void 0) event.description = description;
+  if (description !== undefined) event.description = description;
   if (type) event.type = type;
   if (start_time) event.start_time = start_time;
-  if (end_time !== void 0) event.end_time = end_time || void 0;
-  if (location !== void 0) event.location = location || void 0;
-  if (booking_link !== void 0) event.booking_link = booking_link || void 0;
+  if (end_time !== undefined) event.end_time = end_time || undefined;
+  if (location !== undefined) event.location = location || undefined;
+  if (booking_link !== undefined) event.booking_link = booking_link || undefined;
   if (responsible_id) event.responsible_id = responsible_id;
+
   db.saveStore();
   res.json({ success: true, event });
 });
+
 app.post("/api/events/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   const initialLen = store.events.length;
-  store.events = store.events.filter((e) => e.id !== id);
+  store.events = store.events.filter(e => e.id !== id);
   db.saveStore();
   res.json({ success: true, count: initialLen - store.events.length });
 });
+
+// Memories
 app.post("/api/memories/update", (req, res) => {
   const { id, description, date, location, album_name, is_capsule, capsule_unlock_date } = req.body;
   const store = db.getStore();
-  const memory = store.memories.find((m) => m.id === id);
+  const memory = store.memories.find(m => m.id === id);
   if (!memory) {
     return res.status(404).json({ error: "Memory not found" });
   }
-  if (description !== void 0) memory.description = description;
-  if (date !== void 0) memory.date = date;
-  if (location !== void 0) memory.location = location;
-  if (album_name !== void 0) memory.album_name = album_name;
-  if (is_capsule !== void 0) memory.is_capsule = !!is_capsule;
-  if (capsule_unlock_date !== void 0) memory.capsule_unlock_date = capsule_unlock_date || void 0;
+  if (description !== undefined) memory.description = description;
+  if (date !== undefined) memory.date = date;
+  if (location !== undefined) memory.location = location;
+  if (album_name !== undefined) memory.album_name = album_name;
+  if (is_capsule !== undefined) memory.is_capsule = !!is_capsule;
+  if (capsule_unlock_date !== undefined) memory.capsule_unlock_date = capsule_unlock_date || undefined;
+
   db.saveStore();
   res.json({ success: true, memory });
 });
+
 app.post("/api/memories/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   const initialLen = store.memories.length;
-  store.memories = store.memories.filter((m) => m.id !== id);
+  store.memories = store.memories.filter(m => m.id !== id);
   db.saveStore();
   res.json({ success: true, count: initialLen - store.memories.length });
 });
+
+// Wishlist
 app.post("/api/wishlist/update", (req, res) => {
   const { id, name, link, estimated_price, priority, is_private_to_partner, category, saving_goal } = req.body;
   const store = db.getStore();
-  const wishlist = store.wishlist.find((w) => w.id === id);
+  const wishlist = store.wishlist.find(w => w.id === id);
   if (!wishlist) {
     return res.status(404).json({ error: "Wishlist item not found" });
   }
   if (name) wishlist.name = name;
-  if (link !== void 0) wishlist.link = link;
-  if (estimated_price !== void 0) wishlist.estimated_price = estimated_price ? parseFloat(estimated_price) : void 0;
+  if (link !== undefined) wishlist.link = link;
+  if (estimated_price !== undefined) wishlist.estimated_price = estimated_price ? parseFloat(estimated_price) : undefined;
   if (priority) wishlist.priority = priority;
-  if (is_private_to_partner !== void 0) wishlist.is_private_to_partner = !!is_private_to_partner;
+  if (is_private_to_partner !== undefined) wishlist.is_private_to_partner = !!is_private_to_partner;
   if (category) wishlist.category = category;
-  if (saving_goal !== void 0) {
-    wishlist.saving_goal = saving_goal ? parseFloat(saving_goal) : void 0;
-    if (saving_goal && wishlist.saving_saved === void 0) {
+  if (saving_goal !== undefined) {
+    wishlist.saving_goal = saving_goal ? parseFloat(saving_goal) : undefined;
+    if (saving_goal && wishlist.saving_saved === undefined) {
       wishlist.saving_saved = 0;
     }
   }
+
   db.saveStore();
   res.json({ success: true, item: wishlist });
 });
+
 app.post("/api/wishlist/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   const initialLen = store.wishlist.length;
-  store.wishlist = store.wishlist.filter((w) => w.id !== id);
+  store.wishlist = store.wishlist.filter(w => w.id !== id);
   db.saveStore();
   res.json({ success: true, count: initialLen - store.wishlist.length });
 });
+
+// Recipes
 app.post("/api/recipes/update", (req, res) => {
   const { id, title, ingredients, instructions, duration, portions, couple_rating, tags, photo_url } = req.body;
   const store = db.getStore();
-  const recipe = store.recipes.find((r) => r.id === id);
+  const recipe = store.recipes.find(r => r.id === id);
   if (!recipe) {
     return res.status(404).json({ error: "Recipe not found" });
   }
   if (title) recipe.title = title;
-  if (ingredients !== void 0) recipe.ingredients = Array.isArray(ingredients) ? ingredients : [ingredients];
-  if (instructions !== void 0) recipe.instructions = instructions;
-  if (duration !== void 0) recipe.duration = duration ? parseInt(duration, 10) : 30;
-  if (portions !== void 0) recipe.portions = portions ? parseInt(portions, 10) : 2;
-  if (couple_rating !== void 0) recipe.couple_rating = couple_rating || void 0;
-  if (tags !== void 0) recipe.tags = tags || [];
-  if (photo_url !== void 0) recipe.photo_url = photo_url;
+  if (ingredients !== undefined) recipe.ingredients = Array.isArray(ingredients) ? ingredients : [ingredients];
+  if (instructions !== undefined) recipe.instructions = instructions;
+  if (duration !== undefined) recipe.duration = duration ? parseInt(duration, 10) : 30;
+  if (portions !== undefined) recipe.portions = portions ? parseInt(portions, 10) : 2;
+  if (couple_rating !== undefined) recipe.couple_rating = couple_rating || undefined;
+  if (tags !== undefined) recipe.tags = tags || [];
+  if (photo_url !== undefined) recipe.photo_url = photo_url;
+
   db.saveStore();
   res.json({ success: true, recipe });
 });
+
 app.post("/api/recipes/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   const initialLen = store.recipes.length;
-  store.recipes = store.recipes.filter((r) => r.id !== id);
+  store.recipes = store.recipes.filter(r => r.id !== id);
   db.saveStore();
   res.json({ success: true, count: initialLen - store.recipes.length });
 });
+
+
+// ================= PET MODULE ENDPOINTS =================
+
 app.post("/api/pets/create", (req, res) => {
   const { name, species, breed, age, avatar_url, food_daily_qty, food_inventory_item_id } = req.body;
   if (!name) {
     return res.status(400).json({ error: "Pet name is required" });
   }
+
   const store = db.getStore();
   if (!store.pets) store.pets = [];
-  const newPet = {
+
+  const newPet: Pet = {
     id: "pet_" + Date.now(),
     name,
     species: species || "Outros",
     breed: breed || "",
-    age: age ? parseInt(age, 10) : void 0,
+    age: age ? parseInt(age, 10) : undefined,
     avatar_url: avatar_url || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=300",
     vaccines: [],
     medications: [],
     weights: [],
     documents: [],
-    food_daily_qty: food_daily_qty ? parseInt(food_daily_qty, 10) : void 0,
-    food_inventory_item_id: food_inventory_item_id || void 0
+    food_daily_qty: food_daily_qty ? parseInt(food_daily_qty, 10) : undefined,
+    food_inventory_item_id: food_inventory_item_id || undefined
   };
+
   store.pets.push(newPet);
-  logActivity(store, "pet_added", `Novo pet registrado no lar: ${name}! \u{1F43E}`);
+  logActivity(store, "pet_added", `Novo pet registrado no lar: ${name}! 🐾`);
   db.saveStore();
   res.json({ success: true, pet: newPet });
 });
+
 app.post("/api/pets/update", (req, res) => {
   const { id, name, species, breed, age, avatar_url, vaccines, medications, weights, documents, food_daily_qty, food_inventory_item_id } = req.body;
   const store = db.getStore();
   if (!store.pets) store.pets = [];
-  const pet = store.pets.find((p) => p.id === id);
+
+  const pet = store.pets.find(p => p.id === id);
   if (!pet) {
     return res.status(404).json({ error: "Pet not found" });
   }
+
   if (name) pet.name = name;
-  if (species !== void 0) pet.species = species;
-  if (breed !== void 0) pet.breed = breed;
-  if (age !== void 0) pet.age = age ? parseInt(age, 10) : void 0;
-  if (avatar_url !== void 0) pet.avatar_url = avatar_url;
-  if (vaccines !== void 0) pet.vaccines = vaccines;
-  if (medications !== void 0) pet.medications = medications;
-  if (weights !== void 0) pet.weights = weights;
-  if (documents !== void 0) pet.documents = documents;
-  if (food_daily_qty !== void 0) pet.food_daily_qty = food_daily_qty ? parseInt(food_daily_qty, 10) : void 0;
-  if (food_inventory_item_id !== void 0) pet.food_inventory_item_id = food_inventory_item_id;
+  if (species !== undefined) pet.species = species;
+  if (breed !== undefined) pet.breed = breed;
+  if (age !== undefined) pet.age = age ? parseInt(age, 10) : undefined;
+  if (avatar_url !== undefined) pet.avatar_url = avatar_url;
+  if (vaccines !== undefined) pet.vaccines = vaccines;
+  if (medications !== undefined) pet.medications = medications;
+  if (weights !== undefined) pet.weights = weights;
+  if (documents !== undefined) pet.documents = documents;
+  if (food_daily_qty !== undefined) pet.food_daily_qty = food_daily_qty ? parseInt(food_daily_qty, 10) : undefined;
+  if (food_inventory_item_id !== undefined) pet.food_inventory_item_id = food_inventory_item_id;
+
+  // Let's check food integration! "Controle de ração e alimentação: can deduct and triggers shopping if low"
+  // If we update food and we have food_inventory_item_id, let's verify if the connected inventory item exists
+  // and trigger checks if needed.
   if (pet.food_inventory_item_id) {
-    const invItem = store.inventory.find((i) => i.id === pet.food_inventory_item_id);
+    const invItem = store.inventory.find(i => i.id === pet.food_inventory_item_id);
     if (invItem && invItem.quantity < invItem.min_quantity) {
-      const today = /* @__PURE__ */ new Date();
+      // already handled, or let's double trigger
+      const today = new Date();
       const currentMonthId = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
       const lowercaseName = invItem.name.trim().toLowerCase();
       const exists = store.shopping.find(
-        (s) => !s.is_bought && s.monthId === currentMonthId && s.name.trim().toLowerCase() === lowercaseName
+        (s: any) => !s.is_bought && 
+             (s.monthId === currentMonthId) && 
+             s.name.trim().toLowerCase() === lowercaseName
       );
       if (!exists) {
         const newShopItem = {
           id: "shop_inv_" + Date.now(),
           name: invItem.name,
-          category: "Outros" /* OUTROS */,
+          category: ShoppingCategory.OUTROS,
           quantity: Math.max(1, Math.ceil(invItem.min_quantity - invItem.quantity)),
           unit: invItem.unit,
           price: 0,
@@ -1969,21 +1958,24 @@ app.post("/api/pets/update", (req, res) => {
           monthId: currentMonthId,
           coupleId: pet.coupleId
         };
-        store.shopping.push(newShopItem);
-        logActivity(store, "pet_food_low", `Ra\xE7\xE3o de '${pet.name}' acabando (${invItem.quantity} ${invItem.unit}). Item adicionado \xE0s compras!`);
+        store.shopping.push(newShopItem as any);
+        logActivity(store, "pet_food_low", `Ração de '${pet.name}' acabando (${invItem.quantity} ${invItem.unit}). Item adicionado às compras!`);
       }
     }
   }
+
   db.saveStore();
   res.json({ success: true, pet });
 });
+
 app.post("/api/pets/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   if (!store.pets) store.pets = [];
-  const pet = store.pets.find((p) => p.id === id);
+  
+  const pet = store.pets.find(p => p.id === id);
   if (pet) {
-    store.pets = store.pets.filter((p) => p.id !== id);
+    store.pets = store.pets.filter(p => p.id !== id);
     logActivity(store, "pet_deleted", `Pet removido do lar: ${pet.name}`);
     db.saveStore();
     res.json({ success: true });
@@ -1991,141 +1983,180 @@ app.post("/api/pets/delete", (req, res) => {
     res.status(404).json({ error: "Pet not found" });
   }
 });
+
+
+// ================= BUDGET BY CATEGORY =================
+
 app.post("/api/budget/set", (req, res) => {
   const { category, limit } = req.body;
   const { coupleId } = getRequestCredentials(req);
   const store = db.getStore();
-  const { couple } = getCoupleAndUsers(store, coupleId);
+  const { couple } = getCoupleAndUsers(store, coupleId as string);
+
   if (!couple.expenseBudgets) {
-    couple.expenseBudgets = {};
+    couple.expenseBudgets = {} as any;
   }
-  couple.expenseBudgets[category] = parseFloat(limit);
+  (couple.expenseBudgets as any)[category] = parseFloat(limit);
   db.saveStore();
   res.json({ success: true, budgets: couple.expenseBudgets });
 });
+
+// ================= TASK TRANSFER =================
+
 app.post("/api/tasks/transfer", (req, res) => {
   const { id, to_user_id, note } = req.body;
   const { userId } = getRequestCredentials(req);
   const store = db.getStore();
-  const task = store.tasks.find((t) => t.id === id);
+  const task = store.tasks.find(t => t.id === id);
+
   if (!task) {
     return res.status(404).json({ error: "Task not found" });
   }
+
   task.transferred_from = task.responsible_id;
   task.responsible_id = to_user_id;
   if (note) {
     task.transfer_note = note;
     task.comments.push({
       id: "comment_" + Date.now(),
-      author_id: userId,
-      text: `\u{1F504} Transferida de ${task.transferred_from}: "${note}"`,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      author_id: userId as string,
+      text: `🔄 Transferida de ${task.transferred_from}: "${note}"`,
+      timestamp: new Date().toISOString()
     });
   }
+
   logActivity(store, "task_transferred", `${userId} transferiu tarefa "${task.title}" para ${to_user_id}`);
   db.saveStore();
   res.json({ success: true, task });
 });
+
+// ================= FIXED HOUSEHOLD FUNCTIONS =================
+
 app.post("/api/fixed-functions/create", (req, res) => {
   const { title, responsible_id, frequency, category, rotation_enabled } = req.body;
   if (!title || !responsible_id || !frequency) {
     return res.status(400).json({ error: "Title, responsible and frequency are required" });
   }
+
   const store = db.getStore();
   if (!store.fixedFunctions) store.fixedFunctions = [];
-  const newFunction = {
+
+  const newFunction: FixedFunction = {
     id: "func_" + Date.now(),
     title,
     responsible_id,
     frequency,
-    category: category || "Outro" /* OUTRO */,
+    category: category || TaskCategory.OUTRO,
     rotation_enabled: !!rotation_enabled,
     current_rotation_owner: responsible_id,
     completion_history: [],
     active: true
   };
+
   store.fixedFunctions.push(newFunction);
   logActivity(store, "function_created", `Nova rotina fixa: ${title} (${frequency})`);
   db.saveStore();
   res.json({ success: true, func: newFunction });
 });
+
 app.post("/api/fixed-functions/toggle-complete", (req, res) => {
   const { id, user_id } = req.body;
   const store = db.getStore();
   if (!store.fixedFunctions) store.fixedFunctions = [];
-  const func = store.fixedFunctions.find((f) => f.id === id);
+
+  const func = store.fixedFunctions.find(f => f.id === id);
   if (!func) {
     return res.status(404).json({ error: "Function not found" });
   }
-  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-  const alreadyCompletedToday = func.completion_history.some((h) => h.date === today);
+
+  const today = new Date().toISOString().split("T")[0];
+  const alreadyCompletedToday = func.completion_history.some(h => h.date === today);
+
   if (alreadyCompletedToday) {
-    func.completion_history = func.completion_history.filter((h) => h.date !== today);
+    func.completion_history = func.completion_history.filter(h => h.date !== today);
   } else {
     func.completion_history.push({ date: today, completed_by: user_id });
+
     if (func.rotation_enabled) {
       const otherUser = func.current_rotation_owner === "Leandro" ? "Kaisa" : "Leandro";
       func.current_rotation_owner = otherUser;
-      logActivity(store, "function_rotated", `${func.title} agora \xE9 responsabilidade de ${otherUser}`);
+      logActivity(store, "function_rotated", `${func.title} agora é responsabilidade de ${otherUser}`);
     }
   }
+
   db.saveStore();
   res.json({ success: true, func });
 });
+
 app.post("/api/fixed-functions/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   if (!store.fixedFunctions) store.fixedFunctions = [];
-  store.fixedFunctions = store.fixedFunctions.filter((f) => f.id !== id);
+  store.fixedFunctions = store.fixedFunctions.filter(f => f.id !== id);
   db.saveStore();
   res.json({ success: true });
 });
+
+// ================= ACTIVITY REACTIONS =================
+
 app.post("/api/reactions/add", (req, res) => {
   const { activity_id, emoji } = req.body;
   const { coupleId, userId } = getRequestCredentials(req);
   const store = db.getStore();
   if (!store.activityReactions) store.activityReactions = [];
+
   const existing = store.activityReactions.find(
-    (r) => r.activity_id === activity_id && r.user_id === userId
+    r => r.activity_id === activity_id && r.user_id === userId
   );
+
   if (existing) {
     existing.emoji = emoji;
-    existing.timestamp = (/* @__PURE__ */ new Date()).toISOString();
+    existing.timestamp = new Date().toISOString();
   } else {
-    const reaction = {
+    const reaction: ActivityReaction = {
       id: "react_" + Date.now(),
       activity_id,
-      user_id: userId,
+      user_id: userId as string,
       emoji,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      timestamp: new Date().toISOString()
     };
     store.activityReactions.push(reaction);
   }
+
   db.saveStore();
   res.json({ success: true });
 });
+
 app.post("/api/reactions/remove", (req, res) => {
   const { activity_id } = req.body;
   const { userId } = getRequestCredentials(req);
   const store = db.getStore();
   if (!store.activityReactions) store.activityReactions = [];
+
   store.activityReactions = store.activityReactions.filter(
-    (r) => !(r.activity_id === activity_id && r.user_id === userId)
+    r => !(r.activity_id === activity_id && r.user_id === userId)
   );
   db.saveStore();
   res.json({ success: true });
 });
+
+// ================= MONTHLY FIXED ACCOUNTS =================
+
 app.post("/api/monthly-accounts/create", (req, res) => {
   const { name, value, due_day, paid_by_id, category } = req.body;
   if (!name || !value || !due_day) {
     return res.status(400).json({ error: "Name, value and due_day are required" });
   }
+
   const store = db.getStore();
   if (!store.monthlyAccounts) store.monthlyAccounts = [];
-  const exists = store.monthlyAccounts.some((a) => a.name.toLowerCase() === name.toLowerCase());
+
+  // Check for duplicate
+  const exists = store.monthlyAccounts.some(a => a.name.toLowerCase() === name.toLowerCase());
   if (exists) {
-    return res.json({ warning: "Conta j\xE1 existe" });
+    return res.json({ warning: "Conta já existe" });
   }
+
   const newAccount = {
     id: "acc_" + Date.now(),
     name,
@@ -2136,60 +2167,71 @@ app.post("/api/monthly-accounts/create", (req, res) => {
     paid_this_month: false,
     payment_history: []
   };
+
   store.monthlyAccounts.push(newAccount);
   logActivity(store, "account_added", `Conta fixa adicionada: ${name} - R$ ${value}`);
   db.saveStore();
   res.json({ success: true, account: newAccount });
 });
+
 app.post("/api/monthly-accounts/toggle-paid", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   if (!store.monthlyAccounts) store.monthlyAccounts = [];
-  const account = store.monthlyAccounts.find((a) => a.id === id);
+
+  const account = store.monthlyAccounts.find(a => a.id === id);
   if (!account) {
     return res.status(404).json({ error: "Account not found" });
   }
-  const currentMonth = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+
+  const currentMonth = new Date().toISOString().slice(0, 7);
   account.paid_this_month = !account.paid_this_month;
+
   if (account.paid_this_month) {
     account.paid_month = currentMonth;
     if (!account.payment_history) account.payment_history = [];
     account.payment_history.push({ month: currentMonth, paid: true });
     logActivity(store, "account_paid", `Conta "${account.name}" paga!`);
   }
+
   db.saveStore();
   res.json({ success: true, account });
 });
+
 app.post("/api/monthly-accounts/delete", (req, res) => {
   const { id } = req.body;
   const store = db.getStore();
   if (!store.monthlyAccounts) store.monthlyAccounts = [];
-  store.monthlyAccounts = store.monthlyAccounts.filter((a) => a.id !== id);
+  store.monthlyAccounts = store.monthlyAccounts.filter(a => a.id !== id);
   db.saveStore();
   res.json({ success: true });
 });
+
+
+// ==========================================
+// VITE SETUP / STATIC DELIVERY SYSTEM
+// ==========================================
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting backend dev server and injecting Vite client-side SPA bundle...");
-    const vite = await (0, import_vite.createServer)({
+    const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa"
+      appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = import_path2.default.join(process.cwd(), "dist");
-    app.use(import_express.default.static(distPath));
+    // Serve production static build
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(import_path2.default.join(distPath, "index.html"));
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
+
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`N\xF3sDois Server running successfully on http://0.0.0.0:${PORT}`);
+    console.log(`NósDois Server running successfully on http://0.0.0.0:${PORT}`);
   });
 }
+
 startServer();
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-//# sourceMappingURL=server.cjs.map
