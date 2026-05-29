@@ -1871,7 +1871,7 @@ app.post("/api/recipes/delete", (req, res) => {
 // ================= PET MODULE ENDPOINTS =================
 
 app.post("/api/pets/create", (req, res) => {
-  const { name, breed, age, avatar_url, food_daily_qty, food_inventory_item_id } = req.body;
+  const { name, species, breed, age, avatar_url, food_daily_qty, food_inventory_item_id } = req.body;
   if (!name) {
     return res.status(400).json({ error: "Pet name is required" });
   }
@@ -1882,6 +1882,7 @@ app.post("/api/pets/create", (req, res) => {
   const newPet: Pet = {
     id: "pet_" + Date.now(),
     name,
+    species: species || "Outros",
     breed: breed || "",
     age: age ? parseInt(age, 10) : undefined,
     avatar_url: avatar_url || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=300",
@@ -1900,16 +1901,17 @@ app.post("/api/pets/create", (req, res) => {
 });
 
 app.post("/api/pets/update", (req, res) => {
-  const { id, name, breed, age, avatar_url, vaccines, medications, weights, documents, food_daily_qty, food_inventory_item_id } = req.body;
+  const { id, name, species, breed, age, avatar_url, vaccines, medications, weights, documents, food_daily_qty, food_inventory_item_id } = req.body;
   const store = db.getStore();
   if (!store.pets) store.pets = [];
-  
+
   const pet = store.pets.find(p => p.id === id);
   if (!pet) {
     return res.status(404).json({ error: "Pet not found" });
   }
 
   if (name) pet.name = name;
+  if (species !== undefined) pet.species = species;
   if (breed !== undefined) pet.breed = breed;
   if (age !== undefined) pet.age = age ? parseInt(age, 10) : undefined;
   if (avatar_url !== undefined) pet.avatar_url = avatar_url;

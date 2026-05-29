@@ -1,37 +1,35 @@
 import React, { useState } from "react";
-import { 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  FileText, 
-  Activity, 
-  Scale, 
-  ShieldCheck, 
-  FileUp, 
-  Heart, 
-  Calendar,
-  AlertTriangle
-} from "lucide-react";
-import { Pet, PetVaccine, PetMedication, PetWeightRecord, PetDocument, InventoryItem } from "../types";
+import { Plus, Trash2, CreditCard as Edit3, FileText, Activity, Scale, ShieldCheck, FileUp, Heart, Calendar, TriangleAlert as AlertTriangle } from "lucide-react";
+import { Pet, PetSpecies, PetVaccine, PetMedication, PetWeightRecord, PetDocument, InventoryItem } from "../types";
+
+const PET_SPECIES_OPTIONS: { value: PetSpecies; label: string; emoji: string }[] = [
+  { value: "Cachorro", label: "Cachorro", emoji: "🐶" },
+  { value: "Gato", label: "Gato", emoji: "🐱" },
+  { value: "Passaro", label: "Passaro", emoji: "🐦" },
+  { value: "Roedor", label: "Roedor", emoji: "🐹" },
+  { value: "Outros", label: "Outros", emoji: "🐾" },
+];
 
 interface PetsTabProps {
   pets: Pet[];
   inventory: InventoryItem[];
   currentUser: any;
   partnerUser: any;
+  coupleId?: string;
   triggerCustomNotify: (msg: string, type: "success" | "error" | "info") => void;
   triggerCustomConfirm: (msg: string, action: () => void) => void;
   onRefresh: () => void;
 }
 
-export default function PetsTab({ 
-  pets, 
-  inventory, 
-  currentUser, 
+export default function PetsTab({
+  pets,
+  inventory,
+  currentUser,
   partnerUser,
-  triggerCustomNotify, 
+  coupleId,
+  triggerCustomNotify,
   triggerCustomConfirm,
-  onRefresh 
+  onRefresh
 }: PetsTabProps) {
   const [selectedPetId, setSelectedPetId] = useState<string | null>(pets[0]?.id || null);
   const [isAddingPet, setIsAddingPet] = useState(false);
@@ -39,6 +37,7 @@ export default function PetsTab({
 
   // Forms Draft States
   const [petName, setPetName] = useState("");
+  const [petSpecies, setPetSpecies] = useState<PetSpecies>("Cachorro");
   const [petBreed, setPetBreed] = useState("");
   const [petAge, setPetAge] = useState("");
   const [petAvatar, setPetAvatar] = useState("");
@@ -63,6 +62,20 @@ export default function PetsTab({
 
   const activePet = pets.find(p => p.id === selectedPetId) || pets[0];
 
+  const petFetch = async (url: string, body: Record<string, any>) => {
+    const activeCoupleId = coupleId || localStorage.getItem("nosdois_coupleId") || "couple_1";
+    const activeUserId = (typeof currentUser === "string" ? currentUser : currentUser?.id) || localStorage.getItem("nosdois_userId") || "Leandro";
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-couple-id": activeCoupleId,
+        "x-user-id": activeUserId,
+      },
+      body: JSON.stringify({ ...body, coupleId: activeCoupleId, userId: activeUserId }),
+    });
+  };
+
   const handleCreatePet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!petName.trim()) {
@@ -71,23 +84,21 @@ export default function PetsTab({
     }
 
     try {
-      const res = await fetch("/api/pets/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: petName,
-          breed: petBreed,
-          age: petAge ? parseInt(petAge, 10) : undefined,
-          avatar_url: petAvatar,
-          food_daily_qty: foodDailyQty ? parseInt(foodDailyQty, 10) : undefined,
-          food_inventory_item_id: foodInvItemId || undefined
-        })
+      const res = await petFetch("/api/pets/create", {
+        name: petName,
+        species: petSpecies,
+        breed: petBreed,
+        age: petAge ? parseInt(petAge, 10) : undefined,
+        avatar_url: petAvatar || undefined,
+        food_daily_qty: foodDailyQty ? parseInt(foodDailyQty, 10) : undefined,
+        food_inventory_item_id: foodInvItemId || undefined,
       });
       const data = await res.json();
       if (data.success) {
         triggerCustomNotify(`${petName} foi adicionado(a) com sucesso! 🐾`, "success");
         setIsAddingPet(false);
         setPetName("");
+        setPetSpecies("Cachorro");
         setPetBreed("");
         setPetAge("");
         setPetAvatar("");
@@ -105,11 +116,7 @@ export default function PetsTab({
   const handleDeletePet = (id: string, name: string) => {
     triggerCustomConfirm(`Tem certeza que deseja remover ${name} do lar? Isso apagará todo seu histórico.`, async () => {
       try {
-        const res = await fetch("/api/pets/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id })
-        });
+        const res = await petFetch("/api/pets/delete", { id });
         const data = await res.json();
         if (data.success) {
           triggerCustomNotify(`${name} foi removido(a)`, "success");
@@ -124,11 +131,7 @@ export default function PetsTab({
 
   const handleUpdateField = async (updatedPet: Pet) => {
     try {
-      const res = await fetch("/api/pets/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedPet)
-      });
+      const res = await petFetch("/api/pets/update", updatedPet as any);
       if (res.ok) {
         onRefresh();
       }
@@ -279,10 +282,23 @@ export default function PetsTab({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Raça / Espécie</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo de Animal *</label>
+              <select
+                value={petSpecies}
+                onChange={e => setPetSpecies(e.target.value as PetSpecies)}
+                className="w-full bg-slate-50 border border-slate-250 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-teal-500"
+                required
+              >
+                {PET_SPECIES_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.emoji} {opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Raça (opcional)</label>
               <input
                 type="text"
-                placeholder="Ex: Golden, Gato Vira-lata"
+                placeholder="Ex: Golden, Vira-lata, SRD"
                 value={petBreed}
                 onChange={e => setPetBreed(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-250 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-teal-500"
@@ -392,8 +408,13 @@ export default function PetsTab({
                   referrerPolicy="no-referrer"
                 />
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-slate-950 text-base">{activePet.name}</h3>
+                    {activePet.species && (
+                      <span className="bg-teal-600 text-white font-bold text-[9px] px-2 py-0.5 rounded-full">
+                        {PET_SPECIES_OPTIONS.find(o => o.value === activePet.species)?.emoji} {activePet.species}
+                      </span>
+                    )}
                     {activePet.breed && <span className="bg-teal-50 text-teal-700 font-bold text-[9px] px-2 py-0.5 rounded-full">{activePet.breed}</span>}
                   </div>
                   <p className="text-xs text-slate-500">

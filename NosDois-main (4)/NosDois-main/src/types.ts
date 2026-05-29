@@ -312,9 +312,12 @@ export interface PetDocument {
   date_created: string;
 }
 
+export type PetSpecies = "Cachorro" | "Gato" | "Passaro" | "Roedor" | "Outros";
+
 export interface Pet {
   id: string;
   name: string;
+  species: PetSpecies;
   breed?: string;
   age?: number;
   avatar_url?: string;

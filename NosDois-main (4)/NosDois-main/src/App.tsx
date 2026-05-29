@@ -7,40 +7,7 @@ import React, { useState, useEffect } from "react";
 import AuthScreen from "./components/AuthScreen";
 import PetsTab from "./components/PetsTab";
 import HouseTab from "./components/HouseTab";
-import {
-  Home as HomeIcon,
-  CheckSquare,
-  Calendar as CalendarIcon,
-  ShoppingBag,
-  MoreHorizontal,
-  Sparkles,
-  Heart,
-  Plus,
-  MessageSquare,
-  Trash2,
-  DollarSign,
-  Image as ImageIcon,
-  Smile,
-  Settings,
-  Users,
-  RotateCcw,
-  AlertTriangle,
-  ArrowRight,
-  Clipboard,
-  MapPin,
-  Gift,
-  Clock,
-  ShieldAlert,
-  ChevronRight,
-  Sparkle,
-  BookOpen,
-  Info,
-  Award,
-  Trophy,
-  Check,
-  Edit,
-  Archive
-} from "lucide-react";
+import { Hop as HomeIcon, SquareCheck as CheckSquare, Calendar as CalendarIcon, ShoppingBag, MoveHorizontal as MoreHorizontal, Sparkles, Heart, Plus, MessageSquare, Trash2, DollarSign, Image as ImageIcon, Smile, Settings, Users, RotateCcw, TriangleAlert as AlertTriangle, ArrowRight, Clipboard, MapPin, Gift, Clock, ShieldAlert, ChevronRight, Sparkle, BookOpen, Info, Award, Trophy, Check, CreditCard as Edit, Archive } from "lucide-react";
 import {
   TaskCategory,
   TaskPriority,
@@ -4772,6 +4739,7 @@ export default function App() {
                 inventory={inventory}
                 currentUser={currentUser}
                 partnerUser={partnerObj}
+                coupleId={coupleId || undefined}
                 triggerCustomNotify={triggerCustomNotify}
                 triggerCustomConfirm={triggerCustomConfirm}
                 onRefresh={loadState}
